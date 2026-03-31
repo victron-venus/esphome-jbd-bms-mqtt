@@ -1,5 +1,9 @@
 # ESPHome JBD BMS Monitor
 
+[![CI](https://github.com/4alvit/esphome-jbd-bms-mqtt/actions/workflows/ci.yml/badge.svg)](https://github.com/4alvit/esphome-jbd-bms-mqtt/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Release](https://img.shields.io/github/v/release/4alvit/esphome-jbd-bms-mqtt)](https://github.com/4alvit/esphome-jbd-bms-mqtt/releases)
+
 ESP32-based Bluetooth proxy for JBD BMS batteries, publishing data via MQTT to Victron Venus OS.
 
 ## Overview
