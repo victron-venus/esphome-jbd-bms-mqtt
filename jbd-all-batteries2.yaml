@@ -1,0 +1,439 @@
+# ESPHome config for CHAIN 2 - 4 JBD BMS batteries
+# Always-connected model: all BMS stay connected, sequential polling without disconnects
+# Flash with: esphome run jbd-all-batteries2.yaml
+
+esphome:
+  name: jbd-all-batteries2
+  friendly_name: "JBD Chain2 Monitor"
+  on_boot:
+    priority: -100
+    then:
+      - wait_until:
+          wifi.connected:
+      - delay: 10s
+      - logger.log: "Chain2 ready. Starting continuous sequential polling..."
+      - script.execute: poll_all_bms
+
+esp32:
+  board: esp32dev
+  variant: esp32
+  framework:
+    type: esp-idf
+    sdkconfig_options:
+      CONFIG_BT_ACL_CONNECTIONS: "5"
+      CONFIG_BT_GATTC_CONNECT_RETRY_COUNT: "3"
+      CONFIG_BT_ALLOCATION_FROM_SPIRAM_FIRST: "y"
+      CONFIG_BT_BLE_DYNAMIC_ENV_MEMORY: "y"
+      CONFIG_ESP32_REV_MIN_3: "y"
+    advanced:
+      minimum_chip_revision: "3.1"
+
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_pass
+  domain: ".alvit.cf"
+  power_save_mode: NONE
+  ap:
+    ssid: "jbd-chain2"
+    password: !secret wifi_pass
+
+captive_portal:
+
+mqtt:
+  broker: 192.168.160.150
+  port: 1883
+  topic_prefix: battery2
+
+logger:
+  level: INFO
+  logs:
+    jbd_bms_ble: WARN
+
+api:
+  reboot_timeout: 0s
+
+ota:
+  platform: esphome
+
+web_server:
+  port: 80
+
+external_components:
+  - source: github://syssi/esphome-jbd-bms@main
+    refresh: 1d
+    components: [jbd_bms_ble]
+
+esp32_ble:
+  max_connections: 4
+
+esp32_ble_tracker:
+  scan_parameters:
+    interval: 1200ms
+    window: 600ms
+    active: false
+    continuous: true
+
+# Chain 2 BMS - MAC addresses for batteries 5-8
+ble_client:
+  - mac_address: "A5:C2:37:3F:8A:6A"
+    id: ble_bms1
+  - mac_address: "A5:C2:37:3F:8A:53"
+    id: ble_bms2
+  - mac_address: "A5:C2:37:40:01:E5"
+    id: ble_bms3
+  - mac_address: "A5:C2:37:3F:92:05"
+    id: ble_bms4
+
+jbd_bms_ble:
+  - id: bms1
+    ble_client_id: ble_bms1
+    update_interval: never
+  - id: bms2
+    ble_client_id: ble_bms2
+    update_interval: never
+  - id: bms3
+    ble_client_id: ble_bms3
+    update_interval: never
+  - id: bms4
+    ble_client_id: ble_bms4
+    update_interval: never
+
+sensor:
+  # BMS 1
+  - platform: jbd_bms_ble
+    jbd_bms_ble_id: bms1
+    total_voltage:
+      name: "voltage_bms1"
+      id: sensor_bms1_voltage
+      on_raw_value:
+        then:
+          - lambda: 'id(bms1_data_ready) = true;'
+    current:
+      name: "current_bms1"
+      id: sensor_bms1_current
+    power:
+      name: "power_bms1"
+      id: sensor_bms1_power
+    state_of_charge:
+      name: "soc_bms1"
+      id: sensor_bms1_soc
+    capacity_remaining:
+      name: "capacity_remaining_bms1"
+      id: sensor_bms1_capacity
+    charging_cycles:
+      name: "cycles_bms1"
+    temperature_1:
+      name: "temperature1_bms1"
+    cell_voltage_1:
+      name: "voltage_cell1_bms1"
+    cell_voltage_2:
+      name: "voltage_cell2_bms1"
+    cell_voltage_3:
+      name: "voltage_cell3_bms1"
+    cell_voltage_4:
+      name: "voltage_cell4_bms1"
+
+  # BMS 2
+  - platform: jbd_bms_ble
+    jbd_bms_ble_id: bms2
+    total_voltage:
+      name: "voltage_bms2"
+      id: sensor_bms2_voltage
+      on_raw_value:
+        then:
+          - lambda: 'id(bms2_data_ready) = true;'
+    current:
+      name: "current_bms2"
+      id: sensor_bms2_current
+    power:
+      name: "power_bms2"
+      id: sensor_bms2_power
+    state_of_charge:
+      name: "soc_bms2"
+      id: sensor_bms2_soc
+    capacity_remaining:
+      name: "capacity_remaining_bms2"
+      id: sensor_bms2_capacity
+    charging_cycles:
+      name: "cycles_bms2"
+    temperature_1:
+      name: "temperature1_bms2"
+    cell_voltage_1:
+      name: "voltage_cell1_bms2"
+    cell_voltage_2:
+      name: "voltage_cell2_bms2"
+    cell_voltage_3:
+      name: "voltage_cell3_bms2"
+    cell_voltage_4:
+      name: "voltage_cell4_bms2"
+
+  # BMS 3
+  - platform: jbd_bms_ble
+    jbd_bms_ble_id: bms3
+    total_voltage:
+      name: "voltage_bms3"
+      id: sensor_bms3_voltage
+      on_raw_value:
+        then:
+          - lambda: 'id(bms3_data_ready) = true;'
+    current:
+      name: "current_bms3"
+      id: sensor_bms3_current
+    power:
+      name: "power_bms3"
+      id: sensor_bms3_power
+    state_of_charge:
+      name: "soc_bms3"
+      id: sensor_bms3_soc
+    capacity_remaining:
+      name: "capacity_remaining_bms3"
+      id: sensor_bms3_capacity
+    charging_cycles:
+      name: "cycles_bms3"
+    temperature_1:
+      name: "temperature1_bms3"
+    cell_voltage_1:
+      name: "voltage_cell1_bms3"
+    cell_voltage_2:
+      name: "voltage_cell2_bms3"
+    cell_voltage_3:
+      name: "voltage_cell3_bms3"
+    cell_voltage_4:
+      name: "voltage_cell4_bms3"
+
+  # BMS 4
+  - platform: jbd_bms_ble
+    jbd_bms_ble_id: bms4
+    total_voltage:
+      name: "voltage_bms4"
+      id: sensor_bms4_voltage
+      on_raw_value:
+        then:
+          - lambda: 'id(bms4_data_ready) = true;'
+    current:
+      name: "current_bms4"
+      id: sensor_bms4_current
+    power:
+      name: "power_bms4"
+      id: sensor_bms4_power
+    state_of_charge:
+      name: "soc_bms4"
+      id: sensor_bms4_soc
+    capacity_remaining:
+      name: "capacity_remaining_bms4"
+      id: sensor_bms4_capacity
+    charging_cycles:
+      name: "cycles_bms4"
+    temperature_1:
+      name: "temperature1_bms4"
+    cell_voltage_1:
+      name: "voltage_cell1_bms4"
+    cell_voltage_2:
+      name: "voltage_cell2_bms4"
+    cell_voltage_3:
+      name: "voltage_cell3_bms4"
+    cell_voltage_4:
+      name: "voltage_cell4_bms4"
+
+  # ESP32 Status
+  - platform: wifi_signal
+    name: "wifi_signal"
+    update_interval: 60s
+  - platform: uptime
+    name: "uptime"
+    update_interval: 60s
+
+  # Aggregated sensors (Chain Totals)
+  - platform: template
+    name: "voltage_total"
+    id: chain2_total_voltage_sensor
+    unit_of_measurement: "V"
+    accuracy_decimals: 2
+    update_interval: never
+    lambda: |-
+      float total = 0; int count = 0;
+      if (id(sensor_bms1_voltage).has_state() && id(sensor_bms1_voltage).state > 0) { total += id(sensor_bms1_voltage).state; count++; }
+      if (id(sensor_bms2_voltage).has_state() && id(sensor_bms2_voltage).state > 0) { total += id(sensor_bms2_voltage).state; count++; }
+      if (id(sensor_bms3_voltage).has_state() && id(sensor_bms3_voltage).state > 0) { total += id(sensor_bms3_voltage).state; count++; }
+      if (id(sensor_bms4_voltage).has_state() && id(sensor_bms4_voltage).state > 0) { total += id(sensor_bms4_voltage).state; count++; }
+      if (count == 4) return total;
+      if (count > 0) return (total / count) * 4;
+      return {};
+
+  - platform: template
+    name: "power_total"
+    id: chain2_total_power_sensor
+    unit_of_measurement: "W"
+    accuracy_decimals: 1
+    update_interval: never
+    lambda: |-
+      float total = 0;
+      if (id(sensor_bms1_power).has_state()) total += id(sensor_bms1_power).state;
+      if (id(sensor_bms2_power).has_state()) total += id(sensor_bms2_power).state;
+      if (id(sensor_bms3_power).has_state()) total += id(sensor_bms3_power).state;
+      if (id(sensor_bms4_power).has_state()) total += id(sensor_bms4_power).state;
+      return total;
+
+  - platform: template
+    name: "current_total"
+    id: chain2_total_current_sensor
+    unit_of_measurement: "A"
+    accuracy_decimals: 2
+    update_interval: never
+    lambda: |-
+      float voltage = id(chain2_total_voltage_sensor).state;
+      float power = id(chain2_total_power_sensor).state;
+      if (voltage > 10) return power / voltage;
+      return {};
+
+  - platform: template
+    name: "soc_total"
+    id: chain2_min_soc_sensor
+    unit_of_measurement: "%"
+    accuracy_decimals: 0
+    update_interval: never
+    lambda: |-
+      std::vector<float> socs;
+      if (id(sensor_bms1_soc).has_state()) socs.push_back(id(sensor_bms1_soc).state);
+      if (id(sensor_bms2_soc).has_state()) socs.push_back(id(sensor_bms2_soc).state);
+      if (id(sensor_bms3_soc).has_state()) socs.push_back(id(sensor_bms3_soc).state);
+      if (id(sensor_bms4_soc).has_state()) socs.push_back(id(sensor_bms4_soc).state);
+      if (socs.size() < 2) return socs.empty() ? NAN : socs[0];
+      std::sort(socs.begin(), socs.end());
+      if (socs[1] - socs[0] > 20.0f) {
+        return socs[1];
+      }
+      return socs[0];
+
+  - platform: template
+    name: "capacity_total"
+    id: chain2_capacity_remaining_sensor
+    unit_of_measurement: "Ah"
+    accuracy_decimals: 1
+    update_interval: never
+    lambda: |-
+      std::vector<float> values;
+      if (id(sensor_bms1_capacity).has_state() && id(sensor_bms1_capacity).state > 5) values.push_back(id(sensor_bms1_capacity).state);
+      if (id(sensor_bms2_capacity).has_state() && id(sensor_bms2_capacity).state > 5) values.push_back(id(sensor_bms2_capacity).state);
+      if (id(sensor_bms3_capacity).has_state() && id(sensor_bms3_capacity).state > 5) values.push_back(id(sensor_bms3_capacity).state);
+      if (id(sensor_bms4_capacity).has_state() && id(sensor_bms4_capacity).state > 5) values.push_back(id(sensor_bms4_capacity).state);
+      if (values.empty()) return {};
+      std::sort(values.begin(), values.end());
+      if (values.size() >= 2 && (values[0] < values[1] * 0.7f)) {
+        return values[1];
+      }
+      return values[0];
+
+binary_sensor:
+  - platform: jbd_bms_ble
+    jbd_bms_ble_id: bms1
+    charging:
+      name: "charging_bms1"
+    discharging:
+      name: "discharging_bms1"
+    balancing:
+      name: "balancing_bms1"
+    online_status:
+      name: "online_bms1"
+  - platform: jbd_bms_ble
+    jbd_bms_ble_id: bms2
+    charging:
+      name: "charging_bms2"
+    discharging:
+      name: "discharging_bms2"
+    balancing:
+      name: "balancing_bms2"
+    online_status:
+      name: "online_bms2"
+  - platform: jbd_bms_ble
+    jbd_bms_ble_id: bms3
+    charging:
+      name: "charging_bms3"
+    discharging:
+      name: "discharging_bms3"
+    balancing:
+      name: "balancing_bms3"
+    online_status:
+      name: "online_bms3"
+  - platform: jbd_bms_ble
+    jbd_bms_ble_id: bms4
+    charging:
+      name: "charging_bms4"
+    discharging:
+      name: "discharging_bms4"
+    balancing:
+      name: "balancing_bms4"
+    online_status:
+      name: "online_bms4"
+  - platform: status
+    name: "esp32_status"
+
+button:
+  - platform: restart
+    name: "restart"
+    id: restart_esp
+
+globals:
+  - id: bms1_data_ready
+    type: bool
+    restore_value: no
+    initial_value: 'false'
+  - id: bms2_data_ready
+    type: bool
+    restore_value: no
+    initial_value: 'false'
+  - id: bms3_data_ready
+    type: bool
+    restore_value: no
+    initial_value: 'false'
+  - id: bms4_data_ready
+    type: bool
+    restore_value: no
+    initial_value: 'false'
+
+script:
+  - id: poll_all_bms
+    mode: restart
+    then:
+      # BMS 1
+      - lambda: 'id(bms1_data_ready) = false; id(bms1).update();'
+      - wait_until:
+          condition:
+            lambda: 'return id(bms1_data_ready);'
+          timeout: 3s
+      - lambda: 'if (!id(bms1_data_ready)) ESP_LOGW("poll", "B1: Timeout");'
+
+      # BMS 2
+      - lambda: 'id(bms2_data_ready) = false; id(bms2).update();'
+      - wait_until:
+          condition:
+            lambda: 'return id(bms2_data_ready);'
+          timeout: 3s
+      - lambda: 'if (!id(bms2_data_ready)) ESP_LOGW("poll", "B2: Timeout");'
+
+      # BMS 3
+      - lambda: 'id(bms3_data_ready) = false; id(bms3).update();'
+      - wait_until:
+          condition:
+            lambda: 'return id(bms3_data_ready);'
+          timeout: 3s
+      - lambda: 'if (!id(bms3_data_ready)) ESP_LOGW("poll", "B3: Timeout");'
+
+      # BMS 4
+      - lambda: 'id(bms4_data_ready) = false; id(bms4).update();'
+      - wait_until:
+          condition:
+            lambda: 'return id(bms4_data_ready);'
+          timeout: 3s
+      - lambda: 'if (!id(bms4_data_ready)) ESP_LOGW("poll", "B4: Timeout");'
+
+      # Update aggregated sensors
+      - lambda: |-
+          id(chain2_total_voltage_sensor).update();
+          id(chain2_total_power_sensor).update();
+          id(chain2_total_current_sensor).update();
+          id(chain2_min_soc_sensor).update();
+          id(chain2_capacity_remaining_sensor).update();
+
+      - delay: 100ms
+      - script.execute: poll_all_bms
