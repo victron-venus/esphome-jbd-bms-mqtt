@@ -1,0 +1,8 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Victron Community
+    url: https://community.victronenergy.com/
+    about: Ask questions on the Victron Community forum
+  - name: Discussions
+    url: https://github.com/victron-venus/esphome-jbd-bms-mqtt/discussions
+    about: Ask questions and share ideas

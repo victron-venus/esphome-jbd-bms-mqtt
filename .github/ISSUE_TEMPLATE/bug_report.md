@@ -7,12 +7,18 @@ assignees: ''
 ---
 
 ## Description
-A clear description of what the bug is.
+A clear description of the bug.
+
+## Environment
+- **Venus OS version**: 
+- **Hardware**: (Cerbo GX / Raspberry Pi / etc.)
+- **Inverter model**: 
+- **Python version**: 
 
 ## Steps to Reproduce
-1. ...
-2. ...
-3. ...
+1. 
+2. 
+3. 
 
 ## Expected Behavior
 What you expected to happen.
@@ -20,15 +26,13 @@ What you expected to happen.
 ## Actual Behavior
 What actually happened.
 
-## Environment
-- Venus OS version: 
-- Python version: 
-- Hardware (Cerbo GX/RPi): 
-
 ## Logs
 ```
 Paste relevant logs here
 ```
 
+## Screenshots
+If applicable, add screenshots.
+
 ## Additional Context
-Any other context about the problem.
+Any other relevant information.
