@@ -6,7 +6,13 @@
 [![ESPHome](https://img.shields.io/badge/ESPHome-2024.x-blue.svg)](https://esphome.io/)
 [![ESP32](https://img.shields.io/badge/ESP32-supported-green.svg)](https://www.espressif.com/en/products/socs/esp32)
 [![GitHub stars](https://img.shields.io/github/stars/victron-venus/esphome-jbd-bms-mqtt)](https://github.com/victron-venus/esphome-jbd-bms-mqtt/stargazers)
+[![GitHub forks](https://img.shields.io/github/forks/victron-venus/esphome-jbd-bms-mqtt)](https://github.com/victron-venus/esphome-jbd-bms-mqtt/network/members)
+[![GitHub issues](https://img.shields.io/github/issues/victron-venus/esphome-jbd-bms-mqtt)](https://github.com/victron-venus/esphome-jbd-bms-mqtt/issues)
 [![GitHub last commit](https://img.shields.io/github/last-commit/victron-venus/esphome-jbd-bms-mqtt)](https://github.com/victron-venus/esphome-jbd-bms-mqtt/commits/main)
+[![Code size](https://img.shields.io/github/languages/code-size/victron-venus/esphome-jbd-bms-mqtt)](https://github.com/victron-venus/esphome-jbd-bms-mqtt)
+[![Maintenance](https://img.shields.io/badge/Maintained%3F-yes-green.svg)](https://github.com/victron-venus/esphome-jbd-bms-mqtt/graphs/commit-activity)
+[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](https://github.com/victron-venus/esphome-jbd-bms-mqtt/pulls)
+[![Victron Community](https://img.shields.io/badge/Victron-Community-blue)](https://community.victronenergy.com/)
 
 ESP32-based Bluetooth proxy for JBD BMS batteries, publishing data via MQTT to Victron Venus OS.
 
