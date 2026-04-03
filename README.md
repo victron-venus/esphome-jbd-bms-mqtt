@@ -344,6 +344,7 @@ This project is part of a Victron Venus OS integration suite:
 | Project | Description |
 |---------|-------------|
 | [inverter-control](https://github.com/victron-venus/inverter-control) | ESS external control with web dashboard |
+| [inverter-dashboard](https://github.com/victron-venus/inverter-dashboard) | Remote web dashboard via MQTT (Docker) |
 | [dbus-mqtt-battery](https://github.com/victron-venus/dbus-mqtt-battery) | MQTT to D-Bus bridge for BMS integration |
 | [dbus-tasmota-pv](https://github.com/victron-venus/dbus-tasmota-pv) | Tasmota smart plug as PV inverter on D-Bus |
 | **esphome-jbd-bms-mqtt** (this) | ESP32 Bluetooth monitor for JBD BMS |
