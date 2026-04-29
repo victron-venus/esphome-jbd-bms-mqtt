@@ -1,0 +1,41 @@
+name: Scorecard security audit
+
+on:
+  push:
+    branches: [ main ]
+  schedule:
+    - cron: '30 2 * * 3'  # Weekly on Wednesdays at 2:30 AM UTC
+
+# Declare default permissions as read only.
+permissions: read-all
+
+jobs:
+  analysis:
+    name: Scorecard analysis
+    runs-on: ubuntu-latest
+    permissions:
+      # Needed to upload the results to code-scanning dashboard.
+      security-events: write
+      # Needed for GitHub OIDC token
+      id-token: write
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+        persist-credentials: false
+
+    - name: Run Scorecard analysis
+      uses: ossf/scorecard-action@v2
+      with:
+        results_file: results.sarif
+        results_format: sarif
+        # Public repos don't need token, private repos need PAT with specific permissions
+        repo_token: ${{ secrets.SCORECARD_TOKEN }}
+        # Publish the results for public repositories
+        publish_results: true
+
+    - name: Upload Scorecard results to GitHub Security tab
+      uses: github/codeql-action/upload-sarif@v3
+      with:
+        sarif_file: results.sarif

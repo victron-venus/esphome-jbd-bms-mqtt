@@ -1,0 +1,110 @@
+name: Build and Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Tag to build (e.g., v1.0.0)'
+        required: true
+        type: string
+
+permissions:
+  contents: write
+  packages: write
+
+jobs:
+  build:
+    name: Build binaries
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - goos: darwin
+            goarch: arm64
+            name: macos-silicon
+
+          - goos: linux
+            goarch: arm64
+            name: linux-arm64
+
+          - goos: linux
+            goarch: arm
+            goarm: 7
+            name: raspberry-pi3
+
+          - goos: linux
+            goarch: amd64
+            name: linux-amd64
+
+          - goos: darwin
+            goarch: amd64
+            name: macos-intel
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event_name == 'workflow_dispatch' && format('refs/tags/{0}', inputs.tag) || github.ref }}
+
+      - name: Set up Go
+        uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+
+      - name: Get version from tag
+        id: get_version
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "VERSION=${{ inputs.tag }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "VERSION=${GITHUB_REF#refs/tags/}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Build binary
+        env:
+          GOOS: ${{ matrix.goos }}
+          GOARCH: ${{ matrix.goarch }}
+          GOARM: ${{ matrix.goarm }}
+          CGO_ENABLED: 0
+        run: |
+          output_name="inverter-dashboard-${{ matrix.name }}"
+          if [ "${{ matrix.goos }}" = "windows" ]; then
+            output_name="${output_name}.exe"
+          fi
+
+          ldflags="-s -w -X main.Version=${{ steps.get_version.outputs.VERSION }}"
+          go build -ldflags "$ldflags" -o "dist/${output_name}" .
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: inverter-dashboard-${{ matrix.name }}
+          path: dist/inverter-dashboard-${{ matrix.name }}*
+
+  release:
+    name: Attach binaries to release
+    needs: build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Download artifacts
+        uses: actions/download-artifact@v8
+        with:
+          path: dist/
+
+      - name: Create checksums
+        run: find dist -type f -exec sha256sum {} \; | sort -k2 > checksums.txt
+
+      # Do not set `body` / `generate_release_notes` here so a release created by
+      # `release.sh` + `gh release create --notes-file release.txt` keeps your notes;
+      # this job only uploads binaries and checksums to the same tag.
+      - name: Release assets
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref_name }}
+          files: |
+            dist/*/*
+            checksums.txt

@@ -1,0 +1,39 @@
+name: Release Bot
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+  discussions: write
+
+jobs:
+  create-release:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Extract tag
+      id: tag
+      run: echo "TAG=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+
+    - name: Create GitHub Release
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: ${{ github.ref }}
+        release_name: ${{ steps.tag.outputs.TAG }}
+        body: |
+          Automated release ${{ steps.tag.outputs.TAG }}
+
+          ## Assets
+          - Binary artifacts built by CI/CD
+          - Source code (auto-attached)
+        draft: false
+        prerelease: false
