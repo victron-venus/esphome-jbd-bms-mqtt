@@ -38,7 +38,10 @@ jobs:
           python-version: '3.12'
 
       - name: Install ESPHome
-        run: pip install esphome==2026.8.2
+        # These three pinned dependencies publish source distributions only.
+        run: >-
+          pip install --only-binary :all: --no-binary paho-mqtt,esptool,crcmod
+          esphome==2026.8.2 paho-mqtt==1.6.1 esptool==5.3.1 crcmod==1.7
 
       - name: Use non-production test credentials
         run: |
