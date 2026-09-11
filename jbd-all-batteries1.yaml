@@ -60,7 +60,7 @@ web_server:
   port: 80
 
 external_components:
-  - source: github://syssi/esphome-jbd-bms@main
+  - source: github://syssi/esphome-jbd-bms@99cf7c15dbc2056295c88abc3fae7c1d83e6fb7f
     refresh: 1d
     components: [jbd_bms_ble]
 
@@ -74,10 +74,10 @@ esp32_ble_tracker:
     window: 400ms
     active: false
     continuous: true
-  on_bluetooth_le_advertise:
+  on_ble_advertise:
     - lambda: |-
         for (auto &uuid : x.get_service_uuids()) {
-          if (uuid.to_uuid16() == 0xFF00) {
+          if (uuid == esphome::ble_device_base::ESPBTUUID::from_uint16(0xFF00)) {
             ESP_LOGD("ble_scan", "JBD BMS found: %s RSSI: %d", x.address_str().c_str(), x.get_rssi());
           }
         }

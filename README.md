@@ -373,3 +373,12 @@ For issues specific to:
 - **This integration**: Open an issue in this repository
 
 **Note:** This is a community project and is not affiliated with Victron Energy.
+
+
+## Firmware CI
+
+Changes to YAML and workflow files run validation and compilation for all three
+configurations. CI uses ESPHome 2026.8.2 and a pinned esphome-jbd-bms revision,
+with placeholder Wi-Fi credentials. Compilation never uploads firmware.
+The upgrade from 2024.12 is required for the existing minimum-chip-revision option;
+the BLE advertisement trigger uses the supported `on_ble_advertise` name.
