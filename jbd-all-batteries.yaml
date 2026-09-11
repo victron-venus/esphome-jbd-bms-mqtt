@@ -76,7 +76,7 @@ esp32_ble_tracker:
   on_ble_advertise:
     - lambda: |-
         for (auto &uuid : x.get_service_uuids()) {
-          if (uuid.to_uuid16() == 0xFF00) {
+          if (uuid == esphome::ble_device_base::ESPBTUUID::from_uint16(0xFF00)) {
             ESP_LOGD("ble_scan", "JBD BMS found: %s RSSI: %d", x.address_str().c_str(), x.get_rssi());
           }
         }
