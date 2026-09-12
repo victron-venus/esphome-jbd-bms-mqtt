@@ -53,10 +53,51 @@ def base_version(value: str) -> str:
     return value
 
 
+def metadata_version(path: Path) -> str:
+    """Read the base version from one confined repository metadata file."""
+    if not path.resolve().is_relative_to(ROOT.resolve()):
+        raise ValueError("version_file must stay inside the repository")
+    data = path.read_text()
+    if path.suffix == ".json":
+        return base_version(json.loads(data)["version"])
+    if path.suffix == ".toml":
+        parsed = tomllib.loads(data)
+        sections = [
+            parsed.get("project", {}),
+            parsed.get("package", {}),
+            parsed.get("workspace", {}).get("package", {}),
+        ]
+        for section in sections:
+            if isinstance(section.get("version"), str):
+                return base_version(section["version"])
+    match = re.search(
+        r"(?im)^\s*(?:__version__|VERSION|version)\s*[:=]\s*[\"']?"
+        r"([0-9]+\.[0-9]+\.[0-9]+(?:-[\w.]+)?)",
+        data,
+    )
+    return base_version(match[1] if match else data)
+
+
+def next_tag_version() -> str:
+    """Resolve the next patch only when the policy explicitly opts into tags."""
+    tags = run(
+        "git", "tag", "--merged", "HEAD", "--list", "v*", capture=True
+    ).splitlines()
+    versions = [
+        tuple(map(int, tag[1:].split(".")))
+        for tag in tags
+        if tag.startswith("v") and VERSION.fullmatch(tag[1:])
+    ]
+    if not versions:
+        raise ValueError(
+            "No stable version tags exist; configure a committed version source"
+        )
+    major, minor, patch = max(versions)
+    return f"{major}.{minor}.{patch + 1}"
+
+
 def resolve_version(config: dict, requested: str = "") -> str:
     """Resolve an explicit version or the configured committed version source."""
-    # Each metadata format is explicit so malformed sources cannot fall through silently.
-    # pylint: disable=too-many-return-statements,too-many-branches
     if requested:
         if not VERSION.fullmatch(requested):
             raise ValueError(
@@ -65,43 +106,10 @@ def resolve_version(config: dict, requested: str = "") -> str:
         return requested
     if config.get("version"):
         return base_version(config["version"])
-    file = config.get("version_file")
-    if file:
-        path = ROOT / file
-        if not path.resolve().is_relative_to(ROOT.resolve()):
-            raise ValueError("version_file must stay inside the repository")
-        data = path.read_text()
-        if path.suffix == ".json":
-            return base_version(json.loads(data)["version"])
-        if path.suffix == ".toml":
-            parsed = tomllib.loads(data)
-            for section in ("project", "package"):
-                if isinstance(parsed.get(section, {}).get("version"), str):
-                    return base_version(parsed[section]["version"])
-            if isinstance(
-                parsed.get("workspace", {}).get("package", {}).get("version"), str
-            ):
-                return base_version(parsed["workspace"]["package"]["version"])
-        match = re.search(
-            r"(?im)^\s*(?:__version__|VERSION|version)\s*[:=]\s*[\"']?"
-            r"([0-9]+\.[0-9]+\.[0-9]+(?:-[\w.]+)?)",
-            data,
-        )
-        if match:
-            return base_version(match[1])
-        return base_version(data)
+    if config.get("version_file"):
+        return metadata_version(ROOT / config["version_file"])
     if config.get("version_from_tags"):
-        tags = run(
-            "git", "tag", "--merged", "HEAD", "--list", "v*", capture=True
-        ).splitlines()
-        versions = [
-            tuple(map(int, tag[1:].split(".")))
-            for tag in tags
-            if tag.startswith("v") and VERSION.fullmatch(tag[1:])
-        ]
-        if versions:
-            major, minor, patch = max(versions)
-            return f"{major}.{minor}.{patch + 1}"
+        return next_tag_version()
     raise ValueError("Set version_file in .release-policy.json or pass --version X.Y.Z")
 
 
@@ -179,10 +187,8 @@ def dispatch(args: argparse.Namespace, config: dict) -> None:
         print("The stable job waits for the release environment's required reviewer.")
 
 
-def main() -> int:
-    """Route local checks, packaging, inspection and guarded workflow requests."""
-    # Keep command dispatch sequential so publication side effects remain visible.
-    # pylint: disable=too-many-locals,too-many-branches,too-many-statements
+def arguments() -> argparse.Namespace:
+    """Parse public commands and fixed internal artifact-directory arguments."""
     parser = argparse.ArgumentParser(description=__doc__)
     subs = parser.add_subparsers(dest="command", required=True)
     subs.add_parser("check", help="Run the checked-in local validation script")
@@ -203,81 +209,112 @@ def main() -> int:
     resolve = subs.add_parser("resolve", help=argparse.SUPPRESS)
     resolve.add_argument("--version", default="")
     collect = subs.add_parser("collect", help=argparse.SUPPRESS)
-    collect.add_argument("source")
-    collect.add_argument("destination")
-    args = parser.parse_args()
+    collect.add_argument("source", choices=[".release-download"])
+    collect.add_argument("destination", choices=[".release-assets"])
+    return parser.parse_args()
+
+
+def package(args: argparse.Namespace, config: dict) -> None:
+    """Build artifacts through the checked-in adapter for this local platform."""
+    version = resolve_version(config, args.version)
+    scripts = ["scripts/package-release.sh", "scripts/release-build.sh"]
+    script = next((p for p in scripts if (ROOT / p).is_file()), None)
+    if not script:
+        raise ValueError(
+            "Packaging requires the hosted release-build.yml platform matrix"
+        )
+    run("bash", script, version, args.channel)
+
+
+def collect_assets() -> None:
+    """Flatten downloaded CI artifacts using only fixed repository directories."""
+    source = ROOT / ".release-download"
+    destination = ROOT / ".release-assets"
+    if source.is_symlink() or not source.is_dir() or destination.is_symlink():
+        raise ValueError(
+            "Artifact directories must be real directories inside the checkout"
+        )
+    files = []
+    seen = set()
+    for file in source.rglob("*"):
+        if file.is_symlink():
+            raise ValueError(f"Symlink asset: {file}")
+        if not file.is_file():
+            continue
+        if file.name.casefold() in seen:
+            raise ValueError(f"Duplicate asset basename across platforms: {file.name}")
+        seen.add(file.name.casefold())
+        files.append(file)
+    if not files:
+        raise ValueError("No build assets were downloaded")
+    destination.mkdir(exist_ok=False)
+    for file in files:
+        shutil.copyfile(file, destination / file.name)
+
+
+def doctor(config: dict) -> None:
+    """Report whether stable publication has configured environment reviewers."""
+    repo = repository(config)
+    environment = gh_json("api", f"repos/{repo}/environments/release")
+    reviewers = [
+        rule
+        for rule in environment.get("protection_rules", [])
+        if rule.get("type") == "required_reviewers" and rule.get("reviewers")
+    ]
+    if not reviewers:
+        raise ValueError(
+            "Environment 'release' must have required reviewers before stable publication"
+        )
+    print(
+        json.dumps(
+            {
+                "repository": repo,
+                "release_environment": environment["html_url"],
+                "reviewers_configured": True,
+            },
+            indent=2,
+        )
+    )
+
+
+def execute(args: argparse.Namespace, config: dict) -> None:
+    """Route parsed commands while keeping publication in guarded dispatch."""
+    if args.command == "check":
+        run("bash", "scripts/ci.sh")
+    elif args.command == "package":
+        package(args, config)
+    elif args.command == "resolve":
+        print(resolve_version(config, args.version))
+    elif args.command == "collect":
+        collect_assets()
+    elif args.command == "status":
+        workflow = (
+            "quality-gate.yml"
+            if config.get("mode") == "validation-only"
+            else "release-pipeline.yml"
+        )
+        run(
+            "gh",
+            "run",
+            "list",
+            "--repo",
+            repository(config),
+            "--workflow",
+            workflow,
+            "--limit",
+            "10",
+        )
+    elif args.command == "doctor":
+        doctor(config)
+    else:
+        dispatch(args, config)
+
+
+def main() -> int:
+    """Execute one local command and report operational failures consistently."""
+    args = arguments()
     try:
-        config = policy()
-        if args.command == "check":
-            run("bash", "scripts/ci.sh")
-        elif args.command == "package":
-            version = resolve_version(config, args.version)
-            scripts = ["scripts/package-release.sh", "scripts/release-build.sh"]
-            script = next((p for p in scripts if (ROOT / p).is_file()), None)
-            if not script:
-                raise ValueError(
-                    "Packaging is a platform matrix in release-build.yml; use a "
-                    "remote rc request for the complete target set"
-                )
-            run("bash", script, version, args.channel)
-        elif args.command == "resolve":
-            print(resolve_version(config, args.version))
-        elif args.command == "collect":
-            source, destination = Path(args.source), Path(args.destination)
-            destination.mkdir(parents=True, exist_ok=False)
-            files = list(source.rglob("*"))
-            seen = set()
-            for file in files:
-                if file.is_symlink():
-                    raise ValueError(f"Symlink asset: {file}")
-                if not file.is_file():
-                    continue
-                if file.name.casefold() in seen:
-                    raise ValueError(
-                        f"Duplicate asset basename across platforms: {file.name}"
-                    )
-                seen.add(file.name.casefold())
-                shutil.copyfile(file, destination / file.name)
-            if not seen:
-                raise ValueError("No build assets were downloaded")
-        elif args.command == "status":
-            run(
-                "gh",
-                "run",
-                "list",
-                "--repo",
-                repository(config),
-                "--workflow",
-                "quality-gate.yml"
-                if config.get("mode") == "validation-only"
-                else "release-pipeline.yml",
-                "--limit",
-                "10",
-            )
-        elif args.command == "doctor":
-            repo = repository(config)
-            environment = gh_json("api", f"repos/{repo}/environments/release")
-            reviewers = [
-                rule
-                for rule in environment.get("protection_rules", [])
-                if rule.get("type") == "required_reviewers" and rule.get("reviewers")
-            ]
-            if not reviewers:
-                raise ValueError(
-                    "Environment 'release' must have required reviewers before stable publication"
-                )
-            print(
-                json.dumps(
-                    {
-                        "repository": repo,
-                        "release_environment": environment["html_url"],
-                        "reviewers_configured": True,
-                    },
-                    indent=2,
-                )
-            )
-        else:
-            dispatch(args, config)
+        execute(args, policy())
         return 0
     except (ValueError, KeyError, OSError, subprocess.CalledProcessError) as error:
         print(f"release: {error}", file=sys.stderr)
