@@ -24,6 +24,6 @@ jobs:
       contains(fromJSON('["4alvit","californiantiramisu","dependabot[bot]","renovate[bot]"]'), github.event.pull_request.user.login) &&
       contains(github.event.pull_request.labels.*.name, 'automerge') &&
       !github.event.pull_request.draft
-    uses: victron-venus/venus-os-ci-toolkit/.github/workflows/auto-merge.yml@bc821b480dbc0ee77ceb5a07b948c19408a428ae
+    uses: victron-venus/venus-os-ci-toolkit/.github/workflows/auto-merge.yml@3d88973b6ff0d8895f98e608d66c2815a47e5dff
     secrets:
       BOT_PAT: ${{ secrets.BOT_PAT }}
