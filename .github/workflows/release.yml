@@ -1,132 +1,13 @@
-name: Build and Release
-
+# Previous publisher preserved in docs/legacy-workflows for migration review.
+name: Legacy release entry point
 on:
-  push:
-    tags:
-      - 'v*'
   workflow_dispatch:
-    inputs:
-      tag:
-        description: 'Tag to build (e.g., v1.0.0)'
-        required: true
-        type: string
-
 permissions:
   contents: read
-
 jobs:
-  build:
-    name: Build binaries
+  migration:
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
-    strategy:
-      matrix:
-        include:
-          - goos: darwin
-            goarch: arm64
-            name: macos-silicon
-
-          - goos: linux
-            goarch: arm64
-            name: linux-arm64
-
-          - goos: linux
-            goarch: arm
-            goarm: 7
-            name: raspberry-pi3
-
-          - goos: linux
-            goarch: amd64
-            name: linux-amd64
-
-          - goos: darwin
-            goarch: amd64
-            name: macos-intel
-
     steps:
-      - name: Harden the runner (Audit all outbound calls)
-        uses: step-security/harden-runner@bf7454d06d71f1098171f2acdf0cd4708d7b5920 # v2.20.0
-        with:
-          egress-policy: audit
-
-      - name: Checkout code
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          ref: ${{ github.event_name == 'workflow_dispatch' && format('refs/tags/{0}', inputs.tag) || github.ref }}
-
-      - name: Set up Go
-        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
-        with:
-          go-version-file: go.mod
-
-      - name: Get version from tag
-        id: get_version
-        env:
-          INPUT_TAG: ${{ inputs.tag }}
-        run: |
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            TAG="$INPUT_TAG"
-            # Validate tag format
-            if ! [[ "$TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-              echo "Error: Invalid tag format" >&2
-              exit 1
-            fi
-            echo "VERSION=$TAG" >> "$GITHUB_OUTPUT"
-          else
-            echo "VERSION=${GITHUB_REF#refs/tags/}" >> "$GITHUB_OUTPUT"
-          fi
-
-      - name: Build binary
-        env:
-          GOOS: ${{ matrix.goos }}
-          GOARCH: ${{ matrix.goarch }}
-          GOARM: ${{ matrix.goarm }}
-          CGO_ENABLED: 0
-        run: |
-          output_name="inverter-dashboard-${{ matrix.name }}"
-          if [ "${{ matrix.goos }}" = "windows" ]; then
-            output_name="${output_name}.exe"
-          fi
-
-          ldflags="-s -w -X main.Version=${{ steps.get_version.outputs.VERSION }}"
-          go build -ldflags "$ldflags" -o "dist/${output_name}" .
-
-      - name: Upload artifact
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
-        with:
-          name: inverter-dashboard-${{ matrix.name }}
-          path: dist/inverter-dashboard-${{ matrix.name }}*
-
-  release:
-    name: Attach binaries to release
-    needs: build
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write
-      packages: write
-
-    steps:
-      - name: Harden the runner (Audit all outbound calls)
-        uses: step-security/harden-runner@bf7454d06d71f1098171f2acdf0cd4708d7b5920 # v2.20.0
-        with:
-          egress-policy: audit
-
-      - name: Download artifacts
-        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
-        with:
-          path: dist/
-
-      - name: Create checksums
-        run: find dist -type f -exec sha256sum {} \; | sort -k2 > checksums.txt
-
-      # Do not set `body` / `generate_release_notes` here so a release created by
-      # `release.sh` + `gh release create --notes-file release.txt` keeps your notes;
-      # this job only uploads binaries and checksums to the same tag.
-      - name: Release assets
-        uses: softprops/action-gh-release@3d0d9888cb7fd7b750713d6e236d1fcb99157228 # v3.0.2
-        with:
-          tag_name: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref_name }}
-          files: |
-            dist/*/*
-            checksums.txt
+      - run: |
+          echo 'This repository uses validation-only policy. Run Quality gate or bash scripts/ci.sh.'
+          exit 1

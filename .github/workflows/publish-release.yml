@@ -1,37 +1,13 @@
-name: Publish Release Assets
-
+# Previous publisher preserved in docs/legacy-workflows for migration review.
+name: Legacy release entry point
 on:
-  push:
-    tags:
-      - 'v*'
-
+  workflow_dispatch:
 permissions:
-  contents: write
-
+  contents: read
 jobs:
-  publish:
+  migration:
     runs-on: ubuntu-latest
     steps:
-    - name: Harden the runner (Audit all outbound calls)
-      uses: step-security/harden-runner@bf7454d06d71f1098171f2acdf0cd4708d7b5920 # v2.20.0
-      with:
-        egress-policy: audit
-
-    - name: Checkout
-      uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-
-
-    - name: Report release
-      uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
-      with:
-        script: |
-          const tag = context.ref.replace('refs/tags/', '');
-          console.log('Release published: ' + tag);
-
-          github.rest.repos.createOrUpdateFileContents({
-            owner: context.repo.owner,
-            repo: context.repo.repo,
-            path: `.releases/${tag}.md`,
-            message: `chore: release ${tag}`,
-            content: Buffer.from(`Release ${tag} published at ${new Date().toISOString()}`).toString('base64')
-          });
+      - run: |
+          echo 'This repository uses validation-only policy. Run Quality gate or bash scripts/ci.sh.'
+          exit 1

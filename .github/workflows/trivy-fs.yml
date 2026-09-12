@@ -1,6 +1,7 @@
 name: Trivy Filesystem Scan
 
 on:
+  workflow_call: {}
   push:
     branches: [ main ]
   pull_request:
@@ -30,14 +31,20 @@ jobs:
 
 
     - name: Run Trivy vulnerability scanner
-      uses: aquasecurity/trivy-action@c07df6fec6fa692e6fd1200d50aaa1fdd66f03c8 # master
+      uses: aquasecurity/trivy-action@d2a0b60797ff03db6132bd4e2b293f9b37081297
       with:
         scan-type: 'fs'
         scan-ref: '.'
         format: 'sarif'
         output: 'trivy-results.sarif'
+        scanners: vuln,secret,misconfig
+        severity: HIGH,CRITICAL
+        exit-code: '1'
+        ignore-unfixed: false
+        limit-severities-for-sarif: true
 
     - name: Upload Trivy scan results to GitHub Security tab
+      if: always()
       uses: github/codeql-action/upload-sarif@7188fc363630916deb702c7fdcf4e481b751f97a # v4.37.1
       with:
         sarif_file: 'trivy-results.sarif'
