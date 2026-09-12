@@ -1,19 +1,30 @@
-name: 'Auto Approve PRs'
-description: 'Auto-approve Dependabot, Renovate, and 4alvit PRs'
+name: Auto Approve PRs
 
-"on":
+# Same-repository PRs bootstrap from the branch; forks use trusted base metadata.
+# Never check out or execute pull request code.
+on:
   pull_request:
-    types: [opened, synchronize, reopened]
+    types: [opened, synchronize, reopened, ready_for_review, labeled, unlabeled, edited, converted_to_draft]
+  pull_request_target:
+    types: [opened, synchronize, reopened, ready_for_review, labeled, unlabeled, edited, converted_to_draft]
 
 permissions:
   contents: read
   pull-requests: write
 
+concurrency:
+  group: '${{ github.workflow }}-${{ github.event_name }}-${{ github.event.pull_request.number }}'
+  cancel-in-progress: true
+
 jobs:
   auto-approve:
-    name: Auto Approve
-    uses: victron-venus/venus-os-ci-toolkit/.github/workflows/auto-approve-reusable.yml@23d5d855d21bd1f53764de232e80ce07ff1d0757
-    # BOT_PAT must be forwarded explicitly (reusable workflows receive
-    # no secrets by default). Without the secret the step skips cleanly.
+    if: >-
+      ((github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository) ||
+       (github.event_name == 'pull_request_target' && github.event.pull_request.head.repo.full_name != github.repository)) &&
+      contains(fromJSON('["4alvit","californiantiramisu","dependabot[bot]","renovate[bot]"]'), github.event.pull_request.user.login) &&
+      contains(github.event.pull_request.labels.*.name, 'automerge') &&
+      !github.event.pull_request.draft
+    uses: victron-venus/venus-os-ci-toolkit/.github/workflows/auto-approve-reusable.yml@bb5ac32a58c40a529f021516476cd13744099f73
     secrets:
       BOT_PAT: ${{ secrets.BOT_PAT }}
+      APPROVAL_PAT: ${{ secrets.APPROVAL_PAT }}

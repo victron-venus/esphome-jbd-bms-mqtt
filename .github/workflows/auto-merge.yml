@@ -1,55 +1,29 @@
-name: Auto-merge PR
+name: Auto Merge PRs
 
+# Same-repository PRs bootstrap from the branch; forks use trusted base metadata.
+# Never check out or execute pull request code.
 on:
   pull_request:
-    types: [opened, synchronize, labeled, unlabeled]
-  # check_suite trigger removed: the job if reads github.event.pull_request.*,
-  # which is null on check_suite events, so those runs always skipped anyway.
-  # wait-for-status-checks inside pull_request runs covers waiting for checks.
+    types: [opened, synchronize, reopened, ready_for_review, labeled, unlabeled, edited, converted_to_draft]
+  pull_request_target:
+    types: [opened, synchronize, reopened, ready_for_review, labeled, unlabeled, edited, converted_to_draft]
 
 permissions:
-  contents: write
+  contents: read
   pull-requests: write
 
-env:
-  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+concurrency:
+  group: '${{ github.workflow }}-${{ github.event_name }}-${{ github.event.pull_request.number }}'
+  cancel-in-progress: true
 
 jobs:
   auto-merge:
-    runs-on: ubuntu-latest
-    if: |
-      github.actor == '4alvit' &&
-      github.event.pull_request.draft == false &&
-      github.event.pull_request.base.ref == 'main'
-
-    steps:
-      - name: Harden the runner (Audit all outbound calls)
-        uses: step-security/harden-runner@05e31511f85b41b11d1cf0ef85d0992719546e2c # v2.21.0
-        with:
-          egress-policy: audit
-
-      - name: Wait for required checks
-        uses: poseidon/wait-for-status-checks@e7e24423722c5b8e97a6dd5848827d2a412f812d # v0.7.0
-        with:
-          token: ${{ secrets.BOT_PAT }}
-          timeout: 600
-          interval: 10
-          match_pattern: |
-            Python Security Scan
-            Dependency Review
-
-      - name: Auto-merge PR
-        # wait-for-status-checks declares no outputs; automerge-action itself
-        # blocks until required checks pass and required reviews are present,
-        # retrying MERGE_RETRIES times.
-        uses: pascalgn/automerge-action@7961b8b5eec56cc088c140b56d864285eabd3f67 # v0.16.4
-        env:
-          GITHUB_TOKEN: ${{ secrets.BOT_PAT }}
-          # automerge-action's default label list is "automerge,@automerge" —
-          # it never matched this repo's "auto-merge" label, so nothing ever
-          # merged. Point it at the repo label.
-          MERGE_LABELS: auto-merge
-          MERGE_METHOD: squash
-          MERGE_COMMIT_MESSAGE: automatic
-          MERGE_RETRIES: 60
-          MERGE_RETRY_SLEEP: 30000
+    if: >-
+      ((github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository) ||
+       (github.event_name == 'pull_request_target' && github.event.pull_request.head.repo.full_name != github.repository)) &&
+      contains(fromJSON('["4alvit","californiantiramisu","dependabot[bot]","renovate[bot]"]'), github.event.pull_request.user.login) &&
+      contains(github.event.pull_request.labels.*.name, 'automerge') &&
+      !github.event.pull_request.draft
+    uses: victron-venus/venus-os-ci-toolkit/.github/workflows/auto-merge.yml@bb5ac32a58c40a529f021516476cd13744099f73
+    secrets:
+      BOT_PAT: ${{ secrets.BOT_PAT }}
