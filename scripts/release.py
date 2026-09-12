@@ -23,8 +23,10 @@ from pathlib import Path
 import tomllib
 
 ROOT = Path(__file__).resolve().parents[1]
-VERSION = re.compile(r"(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)\Z")
-RC = re.compile(r"v((?:0|[1-9]\d*)\.(?:0|[1-9]\d*)\.(?:0|[1-9]\d*))-rc\.([1-9]\d*)\Z")
+VERSION = re.compile(r"(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)\Z", re.ASCII)
+RC = re.compile(
+    r"v((?:0|[1-9]\d*)\.(?:0|[1-9]\d*)\.(?:0|[1-9]\d*))-rc\.([1-9]\d*)\Z", re.ASCII
+)
 
 
 def run(*args: str, capture: bool = False) -> str:
@@ -255,6 +257,18 @@ def collect_assets() -> None:
 def doctor(config: dict) -> None:
     """Report whether stable publication has configured environment reviewers."""
     repo = repository(config)
+    if config.get("mode") == "validation-only":
+        print(
+            json.dumps(
+                {
+                    "repository": repo,
+                    "mode": "validation-only",
+                    "release_environment_required": False,
+                },
+                indent=2,
+            )
+        )
+        return
     environment = gh_json("api", f"repos/{repo}/environments/release")
     reviewers = [
         rule
@@ -277,10 +291,30 @@ def doctor(config: dict) -> None:
     )
 
 
+def local_checks(config: dict) -> None:
+    """Run every reviewed repository command, including integration and security.
+
+    Policy commands are repository code, just like scripts/ci.sh. They are never
+    assembled from release arguments or remote event input. Bash supports the
+    checked-in quoting/substitutions used by existing project adapters.
+    """
+    commands = config.get("local_checks", ["bash scripts/ci.sh"])
+    if (
+        not isinstance(commands, list)
+        or not commands
+        or any(
+            not isinstance(command, str) or not command.strip() for command in commands
+        )
+    ):
+        raise ValueError("local_checks must be a nonempty list of reviewed commands")
+    for command in commands:
+        run("bash", "-e", "-o", "pipefail", "-c", command)
+
+
 def execute(args: argparse.Namespace, config: dict) -> None:
     """Route parsed commands while keeping publication in guarded dispatch."""
     if args.command == "check":
-        run("bash", "scripts/ci.sh")
+        local_checks(config)
     elif args.command == "package":
         package(args, config)
     elif args.command == "resolve":

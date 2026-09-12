@@ -6,9 +6,9 @@ name: Quality gate
   workflow_call: {}
   push:
     branches:
-    - main
+      - main
   schedule:
-  - cron: 29 3 * * *
+    - cron: 29 3 * * *
   workflow_dispatch: {}
 permissions:
   contents: read
@@ -40,22 +40,22 @@ jobs:
   gate:
     name: CI gate
     needs:
-    - check-0
-    - check-1
-    - check-2
-    - check-3
+      - check-0
+      - check-1
+      - check-2
+      - check-3
     if: ${{ always() }}
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
-    - name: Require every validation workflow
-      env:
-        RESULTS: ${{ toJSON(needs) }}
-      run: |
-        python3 - <<'PY'
-        import json, os
-        results = json.loads(os.environ['RESULTS'])
-        failed = {name: value['result'] for name, value in results.items() if value['result'] != 'success'}
-        if not results or failed:
-            raise SystemExit(f'Validation did not pass: {failed}')
-        PY
+      - name: Require every validation workflow
+        env:
+          RESULTS: ${{ toJSON(needs) }}
+        run: |
+          python3 - <<'PY'
+          import json, os
+          results = json.loads(os.environ['RESULTS'])
+          failed = {name: value['result'] for name, value in results.items() if value['result'] != 'success'}
+          if not results or failed:
+              raise SystemExit(f'Validation did not pass: {failed}')
+          PY

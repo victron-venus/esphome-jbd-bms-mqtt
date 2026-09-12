@@ -23,6 +23,12 @@ ESP32-based Bluetooth proxy for JBD BMS batteries, publishing data via MQTT to V
 
 > **Note**: This project requires [dbus-mqtt-battery](https://github.com/victron-venus/dbus-mqtt-battery) running on Venus OS to integrate MQTT data into the Victron system.
 
+<!-- ci-release-process:start -->
+## CI and deployment
+
+See [CI and deployment workflow](docs/release-workflow.md) for required checks and local commands. This repository uses validation-only policy; application release channels do not apply.
+<!-- ci-release-process:end -->
+
 ## Overview
 
 This project solves the problem of integrating JBD (Jiabaida) BMS-equipped LiFePO4 batteries with Victron Energy systems. Direct Bluetooth communication from Raspberry Pi/Cerbo GX to JBD BMS proved unreliable and caused system instability (reboots due to memory leaks in BLE stack).

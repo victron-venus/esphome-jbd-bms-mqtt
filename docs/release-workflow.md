@@ -25,8 +25,8 @@ Callable validation workflows:
 
 This repository uses validation-only policy: PR/merge queue checks and staggered
 nightly validation. It does not publish synthetic application beta/RC releases.
-Infrastructure deployments remain manual and use the `production` environment
-where a deployment workflow exists. Terraform validation uses backend-disabled
+Infrastructure deployments remain manual and use the checks and explicit source
+approval declared by their deployment workflow. Terraform validation uses backend-disabled
 copies; a green syntax/validate job is not a reviewed plan or a deployment.
 
 ## Project limits and rollout requirements
@@ -35,17 +35,20 @@ copies; a green syntax/validate job is not a reviewed plan or a deployment.
 - ESPHome compile matrix remains required; no flashing or hardware BLE/MQTT checks. Some external components follow upstream main.
 - Dependency review remains a PR-only comparison; callable full-source validation workflows run for nightly and candidate checks.
 
-Merge and verify the workflows before enabling the additive Terraform **CI gate**
-ruleset for this repository. Configure required reviewers and default-branch-only
-policies for `release`/`production`; the Terraform governance repositories contain
-`release-standards.tf` and opt-in example tfvars. Do not apply fleet-wide requirements
-to repositories whose workflows have not landed. Existing review/security rules
-remain in force. Physical hardware, real credentials/streams and production access
-are not implied by unit tests or packaging checks.
+For public repositories, merge and verify the workflows before enabling the
+additive Terraform **CI gate** ruleset. Where release/deployment workflows use
+environments, configure reviewers and default-branch-only policies. The governance
+repositories contain `release-standards.tf` and opt-in examples for public
+repositories only. Do not extend these requirements to private repositories by
+buying a plan or to workflows that have not landed.
+
+Existing review/security rules remain in force. Physical hardware, real
+credentials/streams and production access are not implied by unit tests or builds.
 
 The release engine/client are vendored from `victron-venus/venus-os-ci-toolkit`.
-They are excluded from consumer-specific formatting/type policy and exercised by
-the mandatory Release tooling contracts job. Update the toolkit source and rerun
+They are excluded from consumer-specific formatting/type policy. Application
+release workflows run the mandatory Release tooling contracts job; validation-only
+projects receive the local client, whose contracts run in the toolkit. Update the toolkit source and rerun
 `scripts/install_release.py`; `--check` detects drift.
 
 References: [GitHub schedules](https://docs.github.com/en/actions/reference/workflows-and-actions/events-that-trigger-workflows#schedule),

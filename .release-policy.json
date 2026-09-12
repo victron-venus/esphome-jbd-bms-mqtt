@@ -21,5 +21,6 @@
     "jbd-all-batteries1.yaml",
     "jbd-all-batteries2.yaml"
   ],
-  "esphome_version": "2026.8.2"
+  "esphome_version": "2026.8.2",
+  "visibility": "public"
 }
