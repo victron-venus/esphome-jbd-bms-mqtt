@@ -1,6 +1,7 @@
 name: CI
 
 on:
+  workflow_call:
   push:
     branches: [main]
     paths-ignore:
@@ -43,12 +44,7 @@ jobs:
           pip install --only-binary :all: --no-binary paho-mqtt,esptool,crcmod
           esphome==2026.8.2 paho-mqtt==1.6.1 esptool==5.3.1 crcmod==1.7
 
-      - name: Use non-production test credentials
-        run: |
-          printf '%s\n' 'wifi_ssid: ci-validation' 'wifi_pass: ci-validation-password' > secrets.yaml
-
-      - name: Validate ESPHome config
-        run: esphome config "${{ matrix.config }}" > /dev/null
-
-      - name: Compile ESPHome config (no flash)
-        run: esphome compile "${{ matrix.config }}"
+      - name: Compile with the local adapter and isolated dummy credentials
+        env:
+          CONFIG: ${{ matrix.config }}
+        run: bash scripts/ci.sh compile "$CONFIG"

@@ -1,0 +1,26 @@
+{
+  "repository": "victron-venus/esphome-jbd-bms-mqtt",
+  "mode": "validation-only",
+  "default_branch": "main",
+  "validation_workflows": [
+    "validate.yml",
+    "ci.yml",
+    "codeql.yml",
+    "trivy-fs.yml"
+  ],
+  "local_checks": [
+    "bash scripts/ci.sh"
+  ],
+  "notes": [
+    "Validation-only policy: no synthetic beta/RC artifacts or tag-triggered stable releases.",
+    "ESPHome compile matrix remains required; no flashing or hardware BLE/MQTT checks. Some external components follow upstream main.",
+    "Dependency review remains a PR-only comparison; callable full-source validation workflows run for nightly and candidate checks."
+  ],
+  "esphome_configs": [
+    "jbd-all-batteries.yaml",
+    "jbd-all-batteries1.yaml",
+    "jbd-all-batteries2.yaml"
+  ],
+  "esphome_version": "2026.8.2",
+  "visibility": "public"
+}
