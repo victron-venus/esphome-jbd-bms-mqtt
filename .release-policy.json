@@ -6,7 +6,8 @@
     "validate.yml",
     "ci.yml",
     "codeql.yml",
-    "trivy-fs.yml"
+    "trivy-fs.yml",
+    "dependency-review.yml"
   ],
   "local_checks": [
     "bash scripts/ci.sh"
@@ -22,5 +23,6 @@
     "jbd-all-batteries2.yaml"
   ],
   "esphome_version": "2026.8.2",
-  "visibility": "public"
+  "visibility": "public",
+  "single_entry_ci": true
 }
