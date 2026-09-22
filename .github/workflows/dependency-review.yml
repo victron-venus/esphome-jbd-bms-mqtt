@@ -7,7 +7,8 @@
 #
 # Source repository: https://github.com/actions/dependency-review-action
 name: 'Dependency Review'
-on: [pull_request]
+on:
+  workflow_call: {}
 
 permissions:
   contents: read
@@ -21,7 +22,14 @@ jobs:
         with:
           egress-policy: audit
 
+        if: github.event_name == 'pull_request'
       - name: 'Checkout Repository'
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        if: github.event_name == 'pull_request'
       - name: 'Dependency Review'
         uses: actions/dependency-review-action@a1d282b36b6f3519aa1f3fc636f609c47dddb294 # v5.0.0
+        if: github.event_name == 'pull_request'
+      - name: No dependency diff outside pull requests
+        if: github.event_name != 'pull_request'
+        run: echo 'Dependency Review applies to pull requests; no dependency diff for this event.'
+    timeout-minutes: 30

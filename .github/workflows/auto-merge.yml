@@ -1,29 +1,28 @@
+# Read trusted base metadata only; do not check out or execute PR code.
 name: Auto Merge PRs
-
-# Same-repository PRs bootstrap from the branch; forks use trusted base metadata.
-# Never check out or execute pull request code.
-on:
-  pull_request:
-    types: [opened, synchronize, reopened, ready_for_review, labeled, unlabeled, edited, converted_to_draft]
+'on':
   pull_request_target:
-    types: [opened, synchronize, reopened, ready_for_review, labeled, unlabeled, edited, converted_to_draft]
-
+    types:
+      - opened
+      - synchronize
+      - reopened
+      - ready_for_review
+      - labeled
+      - unlabeled
+      - edited
+      - converted_to_draft
 permissions:
   contents: read
   pull-requests: write
-
 concurrency:
-  group: '${{ github.workflow }}-${{ github.event_name }}-${{ github.event.pull_request.number }}'
+  group: automerge-${{ github.event.pull_request.number }}
   cancel-in-progress: true
-
 jobs:
   auto-merge:
-    if: >-
-      ((github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository) ||
-       (github.event_name == 'pull_request_target' && github.event.pull_request.head.repo.full_name != github.repository)) &&
-      contains(fromJSON('["4alvit","californiantiramisu","dependabot[bot]","renovate[bot]"]'), github.event.pull_request.user.login) &&
-      contains(github.event.pull_request.labels.*.name, 'automerge') &&
-      !github.event.pull_request.draft
-    uses: victron-venus/venus-os-ci-toolkit/.github/workflows/auto-merge.yml@7f10b0844b2f6c7bde5029f7d2e1f5ad983e84c5
+    if: contains(fromJSON('["4alvit","californiantiramisu","dependabot[bot]","renovate[bot]"]'), github.event.pull_request.user.login)
+    uses: victron-venus/venus-os-ci-toolkit/.github/workflows/auto-merge.yml@186b9463d0d78ef46c7a2ed5313c8866eed46765
+    with:
+      native-auto-merge: true
+      required-status-checks: CodeQL,SonarCloud Code Analysis,Trivy
     secrets:
       BOT_PAT: ${{ secrets.BOT_PAT }}

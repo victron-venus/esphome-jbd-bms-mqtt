@@ -10,21 +10,21 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 60
     steps:
-    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
-      with:
-        persist-credentials: false
-    - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97
-      with:
-        python-version: '3.12'
-    - name: Install pinned syntax parser
-      run: |
-        python3 -m pip install --only-binary :all: PyYAML==6.0.3
-    - name: Install checksum-verified actionlint
-      run: |
-        archive="$RUNNER_TEMP/actionlint.tar.gz"
-        curl --proto '=https' --proto-redir '=https' --fail --silent --show-error --location   https://github.com/rhysd/actionlint/releases/download/v1.7.12/actionlint_1.7.12_linux_amd64.tar.gz --output "$archive"
-        printf '%s  %s\n' '8aca8db96f1b94770f1b0d72b6dddcb1ebb8123cb3712530b08cc387b349a3d8' "$archive" | sha256sum --check --strict
-        tar -xzf "$archive" -C "$RUNNER_TEMP" actionlint
-        printf '%s\n' "$RUNNER_TEMP" >> "$GITHUB_PATH"
-    - name: Run local checks
-      run: bash scripts/ci.sh syntax
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97
+        with:
+          python-version: '3.12'
+      - name: Install pinned syntax parser
+        run: |
+          python3 -m pip install --only-binary :all: PyYAML==6.0.3
+      - name: Install checksum-verified actionlint
+        run: |
+          archive="$RUNNER_TEMP/actionlint.tar.gz"
+          curl --proto '=https' --proto-redir '=https' --fail --silent --show-error --location   https://github.com/rhysd/actionlint/releases/download/v1.7.12/actionlint_1.7.12_linux_amd64.tar.gz --output "$archive"
+          printf '%s  %s\n' '8aca8db96f1b94770f1b0d72b6dddcb1ebb8123cb3712530b08cc387b349a3d8' "$archive" | sha256sum --check --strict
+          tar -xzf "$archive" -C "$RUNNER_TEMP" actionlint
+          printf '%s\n' "$RUNNER_TEMP" >> "$GITHUB_PATH"
+      - name: Run local checks
+        run: bash scripts/ci.sh syntax
