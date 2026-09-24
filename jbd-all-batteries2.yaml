@@ -43,6 +43,8 @@ mqtt:
   broker: 192.168.160.150
   port: 1883
   topic_prefix: battery2
+  # Sensor names repeat across chains; the default legacy generator collides.
+  discovery_unique_id_generator: mac
 
 logger:
   level: INFO
