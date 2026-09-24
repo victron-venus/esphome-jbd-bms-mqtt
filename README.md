@@ -383,6 +383,36 @@ For issues specific to:
 
 ## Firmware CI
 
+### MQTT discovery identity when using both chains
+
+Chain 1 explicitly retains ESPHome's `legacy` discovery IDs so existing Home
+Assistant entity IDs, automations, and history remain associated with it. Chain 2
+uses `discovery_unique_id_generator: mac`; additional monitors must also use the
+MAC generator. Different MQTT topic prefixes alone do **not** make legacy
+discovery IDs unique: both chains otherwise publish IDs such as
+`ESPsensorvoltage_bms1`.
+
+For an existing installation, inspect the retained discovery documents and the
+Home Assistant device/entity registries before uploading. The chain that already
+owns the legacy IDs must retain them. Historical entity names can be misleading
+after a collision: our existing `jbd_chain2_monitor_*` IDs belong to the Chain 1
+device. Keep those IDs unchanged rather than moving their history to another
+battery. Give the newly discovered Chain 2 entities distinct IDs.
+
+When Home Assistant uses another broker, bridge the `battery` and `battery2`
+sensor/binary-sensor state topics and their `status` topics **inbound** as well as
+the discovery documents. Bridging discovery alone creates unavailable entities.
+Do not bridge restart commands or battery control topics as part of this repair.
+An `offline` status must be resolved at the publisher; do not publish a fabricated
+`online` message to hide it.
+
+Prepare a rollback image using the installed ESPHome version and current live
+settings before an OTA change. Update only the discovery generator, preserve the
+running BLE scan/polling configuration, and verify both chains' fresh telemetry
+afterwards. This does not change any BMS protection or charging settings.
+
+See [ESPHome MQTT discovery configuration](https://esphome.io/components/mqtt/#configuration-variables).
+
 Changes to YAML and workflow files run validation and compilation for all three
 configurations. CI uses ESPHome 2026.8.2 and a pinned esphome-jbd-bms revision,
 with placeholder Wi-Fi credentials. Compilation never uploads firmware.
