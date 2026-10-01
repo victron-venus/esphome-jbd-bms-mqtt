@@ -418,3 +418,37 @@ configurations. CI uses ESPHome 2026.8.2 and a pinned esphome-jbd-bms revision,
 with placeholder Wi-Fi credentials. Compilation never uploads firmware.
 The upgrade from 2024.12 is required for the existing minimum-chip-revision option;
 the BLE advertisement trigger uses the supported `on_ble_advertise` name.
+
+### Availability after MQTT reconnects
+
+Both four-BMS monitors import `packages/mqtt-availability.yaml`. Each uses its
+own existing `battery/status` or `battery2/status` topic. The birth message is
+retained at QoS 1, and the **connected monitor itself** repeats it every 30 seconds.
+The native offline last will and shutdown message remain enabled and unchanged.
+A disconnected monitor cannot execute the refresh; battery measurements are not
+republished or forced into Home Assistant history by this timer.
+
+This prevents permanent false `unavailable` after a previous MQTT connection's
+late last will overwrites a newer birth. The ordering was reproduced on an
+isolated FlashMQ 1.23.2 instance: eight pipelined same-client-ID reconnects each
+ended in `online, online, offline`. A separate observer can detect a brief false
+offline until the next successful refresh (normally at most 30 seconds).
+This publisher-side recovery does not modify FlashMQ's internal ordering.
+
+For existing devices, apply only the package import to the **current live**
+configuration and copy the package alongside it. Preserve the device name,
+discovery generator, BLE addresses, scan/polling settings and installed ESPHome
+version. The deployed Chain 1 file is historically named `jbd-all-batteries.yaml`
+even though the repository's maintained four-BMS template is
+`jbd-all-batteries1.yaml`; do not replace it with the legacy eight-BMS template.
+Save per-monitor rollback firmware before OTA and update one monitor at a time.
+
+Verify with an independent subscriber on the source broker and HA broker:
+retained online for both topics, periodic **non-retained deliveries** of the live
+refresh, fresh values on all 32 cell topics, unchanged discovery identities, and
+new Recorder samples. Exercise a late-offline replay in an isolated test, plus a
+genuine disconnected publisher that must remain offline. Never run fault replay
+on production battery topics without reviewing their consumers first.
+
+CI compiles the shared package as part of both maintained monitor configurations;
+offline regression tests cover the stale-will recovery and real-disconnect guard.

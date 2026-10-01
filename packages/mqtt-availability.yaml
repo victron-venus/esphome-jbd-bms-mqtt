@@ -1,0 +1,22 @@
+# Imported with status_topic matching this monitor's MQTT availability topic.
+# A previous connection's delayed last will can arrive after the current birth.
+# Only the connected publisher may reaffirm online; native offline wills remain.
+mqtt:
+  birth_message:
+    topic: ${status_topic}
+    payload: online
+    qos: 1
+    retain: true
+
+interval:
+  - interval: 30s
+    then:
+      - if:
+          condition:
+            mqtt.connected:
+          then:
+            - mqtt.publish:
+                topic: ${status_topic}
+                payload: online
+                qos: 1
+                retain: true

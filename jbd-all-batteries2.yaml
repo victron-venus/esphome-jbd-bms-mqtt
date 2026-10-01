@@ -39,6 +39,12 @@ wifi:
 
 captive_portal:
 
+packages:
+  mqtt_availability: !include
+    file: packages/mqtt-availability.yaml
+    vars:
+      status_topic: battery2/status
+
 mqtt:
   broker: 192.168.160.150
   port: 1883

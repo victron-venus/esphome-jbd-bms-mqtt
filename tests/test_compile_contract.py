@@ -15,6 +15,25 @@ SPEC.loader.exec_module(ADAPTER)
 class ConfigSelectionTests(unittest.TestCase):
     """Reject unsafe file selection before any compiler or network access."""
 
+    def test_shared_package_is_staged_without_real_secrets(self):
+        """Compiler inputs include the shared package and only dummy credentials."""
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary) / "source"
+            stage = Path(temporary) / "stage"
+            (root / "packages").mkdir(parents=True)
+            stage.mkdir()
+            (root / "firmware.yaml").write_text("esphome: {}\n")
+            shared = root / "packages/mqtt-availability.yaml"
+            shared.write_text("interval: []\n")
+            (root / "secrets.yaml").write_text("wifi_pass: real-private-value\n")
+            ADAPTER.stage_configs(root, stage, ["firmware.yaml"])
+            self.assertEqual((stage / shared.relative_to(root)).read_text(), shared.read_text())
+            self.assertNotIn("real-private-value", (stage / "secrets.yaml").read_text())
+            shared.unlink()
+            shared.symlink_to(root / "firmware.yaml")
+            with self.assertRaises(ValueError):
+                ADAPTER.stage_configs(root, stage, ["firmware.yaml"])
+
     def test_declared_regular_yaml_is_selected(self):
         """Return declared paths only, with the original order retained."""
         with tempfile.TemporaryDirectory() as temporary:

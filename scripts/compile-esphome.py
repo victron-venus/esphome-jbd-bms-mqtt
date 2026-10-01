@@ -79,6 +79,9 @@ def stage_configs(root, stage, selected):
                 yaml.safe_dump(data), encoding="utf-8"
             )
     else:
+        shared = "packages/mqtt-availability.yaml"
+        (stage / "packages").mkdir(parents=True, exist_ok=True)
+        shutil.copyfile(confined_config(root, shared), stage / shared)
         for name in selected:
             target = stage / name
             target.parent.mkdir(parents=True, exist_ok=True)
