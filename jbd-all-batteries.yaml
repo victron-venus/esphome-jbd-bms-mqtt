@@ -544,8 +544,9 @@ sensor:
       if (id(sensor_chain1_bms3_voltage).has_state() && id(sensor_chain1_bms3_voltage).state > 0) { total += id(sensor_chain1_bms3_voltage).state; count++; }
       if (id(sensor_chain1_bms4_voltage).has_state() && id(sensor_chain1_bms4_voltage).state > 0) { total += id(sensor_chain1_bms4_voltage).state; count++; }
       if (count == 4) return total;
-      if (count > 0) return (total / count) * 4;
-      return {};
+      // Incomplete series: publish NAN (invalid/unknown). return {} only skips
+      // publishing a new state and would leave a prior complete total stale.
+      return NAN;
 
   - platform: template
     name: "power_total_c1"
@@ -630,8 +631,9 @@ sensor:
       if (id(sensor_chain2_bms3_voltage).has_state() && id(sensor_chain2_bms3_voltage).state > 0) { total += id(sensor_chain2_bms3_voltage).state; count++; }
       if (id(sensor_chain2_bms4_voltage).has_state() && id(sensor_chain2_bms4_voltage).state > 0) { total += id(sensor_chain2_bms4_voltage).state; count++; }
       if (count == 4) return total;
-      if (count > 0) return (total / count) * 4;
-      return {};
+      // Incomplete series: publish NAN (invalid/unknown). return {} only skips
+      // publishing a new state and would leave a prior complete total stale.
+      return NAN;
 
   - platform: template
     name: "power_total_c2"
@@ -780,7 +782,7 @@ interval:
       - lambda: |-
           if (id(ble_busy)) {
             ESP_LOGW("cycle", "BLE busy, skipping this cycle");
-            id(ble_busy) = false;
+            // Keep ble_busy set; only the completion path clears the lock.
           }
       - if:
           condition:
