@@ -56,6 +56,7 @@ jobs:
           python-version: '3.12'
       - run: 'python3 -m pip install --require-hashes --only-binary=:all: -r .github/requirements-workflow-contracts.txt'
       - run: python3 scripts/workflow_contracts.py
+      - run: python3 -m unittest discover -s .github/workflow-tests -p 'test_*.py'
   gate:
     name: CI gate
     needs:
