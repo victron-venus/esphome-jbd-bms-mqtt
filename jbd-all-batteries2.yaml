@@ -301,7 +301,7 @@ sensor:
       float voltage = id(chain2_total_voltage_sensor).state;
       float power = id(chain2_total_power_sensor).state;
       if (voltage > 10) return power / voltage;
-      return {};
+      return NAN;
 
   - platform: template
     name: "soc_total"
