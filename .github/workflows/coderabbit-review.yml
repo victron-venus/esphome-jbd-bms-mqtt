@@ -1,0 +1,22 @@
+name: CodeRabbit Review Requests
+
+on:
+  pull_request_target:
+    types: [opened]
+  workflow_dispatch:
+    inputs:
+      pull-request-number:
+        description: Open PR number to request a review for
+        required: true
+        type: string
+
+permissions: {}
+
+jobs:
+  request-review:
+    if: github.event.repository.private == false
+    uses: victron-venus/venus-os-ci-toolkit/.github/workflows/coderabbit-review-reusable.yml@b81ed0aec645591f0c82a778eb8e3115db86f9ed
+    with:
+      pull-request-number: ${{ inputs.pull-request-number || '' }}
+    secrets:
+      BOT_PAT: ${{ secrets.BOT_PAT }}
