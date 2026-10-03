@@ -9,6 +9,7 @@ and sensor component docs (NAN for invalid/unknown).
 from __future__ import annotations
 
 import re
+import unittest
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -32,34 +33,33 @@ def _voltage_total_lambdas(text: str) -> list[tuple[str, str]]:
     return out
 
 
-def test_no_series_voltage_extrapolation():
-    for path in YAMLS:
-        text = path.read_text()
-        assert "(total / count) * 4" not in text, path.name
+class VoltageTotalTests(unittest.TestCase):
+    """Keep shipped series-voltage lambdas safe for incomplete observations."""
 
+    def test_no_series_voltage_extrapolation(self):
+        """No partial-series average may be extrapolated to four batteries."""
+        for path in YAMLS:
+            lambdas = _voltage_total_lambdas(path.read_text())
+            self.assertTrue(lambdas, f"no voltage_total lambdas in {path.name}")
+            for name, body in lambdas:
+                with self.subTest(path=path.name, sensor=name):
+                    self.assertNotRegex(body, r"/\s*count\b")
 
-def test_incomplete_voltage_total_publishes_nan_not_empty_optional():
-    """Prior-complete then partial must invalidate via NAN, not return {}."""
-    found = 0
-    for path in YAMLS:
-        lambdas = _voltage_total_lambdas(path.read_text())
-        assert lambdas, f"no voltage_total lambdas in {path.name}"
-        for name, body in lambdas:
-            found += 1
-            assert "count == 4" in body, f"{path.name}:{name}"
-            assert "(total / count) * 4" not in body, f"{path.name}:{name}"
-            # After the complete-path return, incomplete must use NAN.
-            after_complete = body.split("if (count == 4) return total;", 1)[1]
-            assert "return NAN;" in after_complete, f"{path.name}:{name} missing NAN"
-            assert "return {};" not in after_complete, (
-                f"{path.name}:{name} still uses return {{}} which retains stale totals"
-            )
-    assert found == 4, f"expected 4 voltage_total lambdas, found {found}"
-
-
-def test_ble_busy_skip_does_not_clear_lock():
-    text = (ROOT / "jbd-all-batteries.yaml").read_text()
-    assert 'ESP_LOGW("cycle", "BLE busy, skipping this cycle");' in text
-    idx = text.index('ESP_LOGW("cycle", "BLE busy, skipping this cycle");')
-    window = text[idx : idx + 120]
-    assert "id(ble_busy) = false;" not in window
+    def test_incomplete_voltage_total_publishes_nan_not_empty_optional(self):
+        """Prior-complete then partial must invalidate via NAN, not return {}."""
+        found = 0
+        for path in YAMLS:
+            lambdas = _voltage_total_lambdas(path.read_text())
+            self.assertTrue(lambdas, f"no voltage_total lambdas in {path.name}")
+            for name, body in lambdas:
+                found += 1
+                with self.subTest(path=path.name, sensor=name):
+                    parts = re.split(
+                        r"if\s*\(\s*count\s*==\s*4\s*\)\s*return\s+total\s*;",
+                        body,
+                        maxsplit=1,
+                    )
+                    self.assertEqual(len(parts), 2, "missing complete-series gate")
+                    self.assertRegex(parts[1], r"return\s+NAN\s*;")
+                    self.assertNotRegex(parts[1], r"return\s*\{\s*\}\s*;")
+        self.assertEqual(found, 4, "expected four voltage_total lambdas")

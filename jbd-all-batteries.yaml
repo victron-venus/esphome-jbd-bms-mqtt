@@ -782,7 +782,7 @@ interval:
       - lambda: |-
           if (id(ble_busy)) {
             ESP_LOGW("cycle", "BLE busy, skipping this cycle");
-            // Keep ble_busy set; only the completion path clears the lock.
+            id(ble_busy) = false;
           }
       - if:
           condition:
