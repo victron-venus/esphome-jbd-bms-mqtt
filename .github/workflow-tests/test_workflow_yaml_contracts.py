@@ -106,6 +106,48 @@ class WorkflowYAMLTests(unittest.TestCase):
             with self.assertRaises(ValueError):
                 CONTRACTS.validate_generator_pins(root, {"quality-gate.yml": workflow})
 
+    def test_reusable_workflows_require_immutable_matching_references(self):
+        action = "owner/repo/.github/workflows/build.yml"
+        for reference, pins in (
+            (action + "@main", None),
+            (action + "@v1", None),
+            (action + "@" + SHA, {}),
+            (action + "@" + SHA, {action: "b" * 40}),
+        ):
+            workflow = {"jobs": {"build": {"uses": reference}}}
+            with (
+                self.subTest(reference=reference, pins=pins),
+                self.assertRaises(ValueError),
+            ):
+                CONTRACTS.validate_workflow_pins("release-pipeline.yml", workflow, pins)
+        workflow = {"jobs": {"build": {"uses": action + "@" + SHA}}}
+        CONTRACTS.validate_workflow_pins(
+            "release-pipeline.yml", workflow, {action: SHA}
+        )
+        CONTRACTS.validate_workflow_pins("release-pipeline.yml", workflow, None)
+        workflow["jobs"]["build"]["uses"] = "./.github/workflows/build.yml"
+        CONTRACTS.validate_workflow_pins("release-pipeline.yml", workflow, {})
+
+    def test_non_generated_workflows_require_sha_without_manifest_membership(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root / ".github").mkdir()
+            (root / ".github/action-pins.json").write_text(
+                json.dumps([{"packageName": "actions/checkout", "digest": SHA}])
+            )
+            workflow = {"jobs": {"build": {"steps": [{"uses": "owner/action@" + SHA}]}}}
+            CONTRACTS.validate_generator_pins(root, {"ci.yml": workflow})
+            workflow["jobs"]["build"]["steps"][0]["uses"] = "owner/action@main"
+            with self.assertRaises(ValueError):
+                CONTRACTS.validate_generator_pins(root, {"ci.yml": workflow})
+            workflow = {
+                "jobs": {
+                    "build": {"uses": "owner/repo/.github/workflows/build.yml@main"}
+                }
+            }
+            with self.assertRaises(ValueError):
+                CONTRACTS.validate_generator_pins(root, {"other.yml": workflow})
+
 
 if __name__ == "__main__":
     unittest.main()

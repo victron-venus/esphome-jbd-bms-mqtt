@@ -58,8 +58,10 @@ def validate_codeql(workflows):
 def validate_workflow_pins(filename, workflow, pins):
     """Require immutable actions and compare canonical generator pins when present."""
     for job in workflow.get("jobs", {}).values():
-        for step in job.get("steps", []):
-            reference = step.get("uses", "")
+        references = [job.get("uses", "")] + [
+            step.get("uses", "") for step in job.get("steps", [])
+        ]
+        for reference in references:
             if not reference or reference.startswith("./"):
                 continue
             action, _, revision = reference.partition("@")
@@ -83,6 +85,7 @@ def validate_generator_pins(directory, workflows):
         raise ValueError("Generator pins must be full commit SHAs")
     for filename, workflow in workflows.items():
         if filename not in {"quality-gate.yml", "release-pipeline.yml"}:
+            validate_workflow_pins(filename, workflow, None)
             continue
         source = (directory / ".github/workflows" / filename).read_text()
         if not source.startswith(
