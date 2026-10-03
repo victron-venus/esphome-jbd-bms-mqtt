@@ -1,0 +1,11 @@
+version: 2
+updates:
+  # Renovate owns CI updates. The ignore rule also prevents separate
+  # Dependabot security-update PRs; vulnerability alerts remain enabled.
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 0
+    ignore:
+      - dependency-name: '*'
