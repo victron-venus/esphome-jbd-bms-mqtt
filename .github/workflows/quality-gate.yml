@@ -21,13 +21,11 @@ jobs:
     permissions:
       contents: read
       actions: read
-      security-events: write
   check-1:
     uses: ./.github/workflows/ci.yml
     permissions:
       contents: read
       actions: read
-      security-events: write
   check-2:
     uses: ./.github/workflows/codeql.yml
     permissions:
@@ -45,7 +43,6 @@ jobs:
     permissions:
       contents: read
       actions: read
-      security-events: write
   workflow-contracts:
     name: CI configuration contracts
     runs-on: ubuntu-latest
@@ -57,8 +54,9 @@ jobs:
       - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
           python-version: '3.12'
-      - run: 'python3 -m pip install --only-binary=:all: PyYAML==6.0.3'
+      - run: 'python3 -m pip install --require-hashes --only-binary=:all: -r .github/requirements-workflow-contracts.txt'
       - run: python3 scripts/workflow_contracts.py
+      - run: python3 -m unittest discover -s .github/workflow-tests -p 'test_*.py'
   gate:
     name: CI gate
     needs:

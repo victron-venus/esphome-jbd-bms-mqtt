@@ -18,7 +18,7 @@ jobs:
           python-version: '3.12'
       - name: Install pinned syntax parser
         run: |
-          python3 -m pip install --only-binary :all: PyYAML==6.0.3
+          python3 -m pip install --require-hashes --only-binary=:all: -r .github/requirements-workflow-contracts.txt
       - name: Install checksum-verified actionlint
         run: |
           archive="$RUNNER_TEMP/actionlint.tar.gz"

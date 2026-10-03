@@ -8,15 +8,16 @@
 
 ## Reporting a Vulnerability
 
-If you discover a security vulnerability, please:
+Private vulnerability reporting is enabled for this repository. Use
+[Report a vulnerability](https://github.com/victron-venus/esphome-jbd-bms-mqtt/security/advisories/new)
+to send a confidential report to the maintainers. Follow
+[GitHub's private reporting instructions](https://docs.github.com/en/code-security/security-advisories/guidance-on-reporting-and-writing/privately-reporting-a-security-vulnerability)
+if you need help submitting the report.
 
-1. **Do NOT** open a public issue
-2. Email the maintainers directly or use GitHub's private vulnerability reporting
-3. Include:
-   - Description of the vulnerability
-   - Steps to reproduce
-   - Potential impact
-   - Suggested fix (if any)
+Include the affected version or commit, steps to reproduce, expected and actual
+behavior, and potential impact. Remove access tokens, credentials and personal
+data from examples. Do not disclose exploit details in public issues before
+coordinating with the maintainers.
 
 ## Security Considerations
 
