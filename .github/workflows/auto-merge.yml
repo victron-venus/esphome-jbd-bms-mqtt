@@ -14,15 +14,17 @@ name: Auto Merge PRs
 permissions:
   contents: read
 concurrency:
-  group: automerge-${{ github.event.pull_request.number }}
+  group: automerge-${{ github.event.pull_request.number }}-${{ (github.event.action != 'edited' || github.event.changes.base) && 'state' || github.run_id }}
   cancel-in-progress: true
 jobs:
   auto-merge:
     permissions:
       contents: read
       pull-requests: write
-    if: contains(fromJSON('["4alvit","californiantiramisu","dependabot[bot]","renovate[bot]"]'), github.event.pull_request.user.login)
-    uses: victron-venus/venus-os-ci-toolkit/.github/workflows/auto-merge.yml@64c15c96f351edc808ce21e2423077417c73a9de # main
+    if: >-
+      (github.event.action != 'edited' || github.event.changes.base) &&
+      contains(fromJSON('["4alvit","californiantiramisu","dependabot[bot]","renovate[bot]"]'), github.event.pull_request.user.login)
+    uses: victron-venus/venus-os-ci-toolkit/.github/workflows/auto-merge.yml@2f0cbb2e321b5b5dcd1febe0a56faa3920fc7be3 # main
     with:
       native-auto-merge: true
       required-status-checks: CodeQL,SonarCloud Code Analysis,Trivy

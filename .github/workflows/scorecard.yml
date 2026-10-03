@@ -32,7 +32,7 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           repository: victron-venus/venus-os-ci-toolkit
-          ref: da027ec9b0e2ee8bcfc2d3ee0b5e11ba6bf27fc0
+          ref: 2f0cbb2e321b5b5dcd1febe0a56faa3920fc7be3
           path: .scorecard-toolkit
           persist-credentials: false
       - name: Set up the scanner build toolchain
