@@ -115,6 +115,7 @@ class TelemetryTests(unittest.TestCase):
 
     def test_both_chains_wire_every_raw_measurement_and_only_publish_live(self):
         """Require matching field callbacks and live-only snapshots on both chains."""
+
         class Loader(yaml.SafeLoader):
             pass
 
