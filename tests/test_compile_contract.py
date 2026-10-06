@@ -41,6 +41,12 @@ class ConfigSelectionTests(unittest.TestCase):
             shared.symlink_to(root / "firmware.yaml")
             with self.assertRaises(ValueError):
                 ADAPTER.stage_configs(root, stage, ["firmware.yaml"])
+            shared.unlink()
+            shared.write_text("interval: []\n")
+            header.unlink()
+            header.symlink_to(root / "firmware.yaml")
+            with self.assertRaisesRegex(ValueError, "Telemetry header"):
+                ADAPTER.stage_configs(root, stage, ["firmware.yaml"])
 
     def test_declared_regular_yaml_is_selected(self):
         """Return declared paths only, with the original order retained."""

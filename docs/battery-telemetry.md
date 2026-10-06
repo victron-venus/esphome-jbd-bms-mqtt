@@ -45,7 +45,7 @@ The JSON contract is:
 The example abbreviates the array: every real message contains entries for BMS
 IDs 1, 2, 3 and 4. `boot_id` is a random 64-bit session identifier, and `seq`
 increases on every publication within that boot, including across reconnects.
-`age_ms` is the age of the oldest required field, using the ESP32 monotonic clock.
+`age_ms` is the time since the oldest required field callback, using the ESP32 monotonic clock.
 There is no dependence on NTP or the Cerbo wall clock.
 
 Each BMS must supply voltage, current, SOC, temperature, all four cell voltages
@@ -54,6 +54,16 @@ operation-status sensor is sampled on every reply so unchanged binary sensor
 states cannot hide the absence of a new reply. Zero SOC and disabled charge or
 discharge permission are valid measurements; missing measurements, nonfinite
 values, nonpositive voltages, and SOC outside 0–100 are not.
+
+The collection window establishes when ESPHome observed a reply. The upstream
+JBD protocol supplies neither a measurement timestamp nor a request identifier;
+BasicInfo and CellInfo are separate replies. Consequently, a delayed response
+that arrives after the next window opens cannot be distinguished from a reply
+to the latest request. The reported age does not include unknown time spent in
+the BMS or BLE transport, and readiness does not assert a simultaneous or
+request-correlated physical measurement. Callbacks arriving while a sample is
+closed are ignored. Correlation or bounded transport draining would require a
+separate upstream protocol/driver change and hardware validation.
 
 `ready` requires all four BMS to be complete and younger than 60 seconds.
 `valid_mask` reports which entries meet those rules. `online` means that this

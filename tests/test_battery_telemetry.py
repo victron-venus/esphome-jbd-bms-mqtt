@@ -12,7 +12,10 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 class TelemetryTests(unittest.TestCase):
+    """Verify the shared collector and both producer configurations."""
+
     def test_current_round_completeness_freshness_and_sessions(self):
+        """Execute completeness, invalid-value, expiry and session contracts in C++."""
         source = r"""
         #include "components/battery_telemetry.h"
         #include <cassert>
@@ -111,6 +114,7 @@ class TelemetryTests(unittest.TestCase):
             subprocess.run([str(binary)], check=True, timeout=5)
 
     def test_both_chains_wire_every_raw_measurement_and_only_publish_live(self):
+        """Require matching field callbacks and live-only snapshots on both chains."""
         class Loader(yaml.SafeLoader):
             pass
 
