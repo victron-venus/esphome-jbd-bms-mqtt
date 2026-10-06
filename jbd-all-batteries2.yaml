@@ -5,13 +5,13 @@
 esphome:
   name: jbd-all-batteries2
   friendly_name: "JBD Chain2 Monitor"
+  includes:
+    - components/battery_telemetry.h
   on_boot:
     priority: -100
     then:
-      - wait_until:
-          wifi.connected:
-      - delay: 10s
-      - logger.log: "Chain2 ready. Starting continuous sequential polling..."
+      - lambda: battery_telemetry::snapshot().begin_session(random_uint32(), random_uint32());
+      - logger.log: "Chain2 starting BMS polling independently of network availability..."
       - script.execute: poll_all_bms
 
 esp32:
@@ -33,6 +33,8 @@ wifi:
   password: !secret wifi_pass
   domain: ".alvit.cf"
   power_save_mode: NONE
+  # Preserve BMS acquisition while the access point is unavailable.
+  reboot_timeout: 0s
   ap:
     ssid: "jbd-chain2"
     password: !secret wifi_pass
@@ -49,6 +51,11 @@ mqtt:
   broker: 192.168.160.150
   port: 1883
   topic_prefix: battery2
+  # An unavailable Cerbo must not reboot the battery monitor.
+  reboot_timeout: 0s
+  on_connect:
+    # Discard the in-progress round; reconnect never republishes a cached snapshot.
+    - script.execute: poll_all_bms
   # Sensor names repeat across chains; the default legacy generator collides.
   discovery_unique_id_generator: mac
 
@@ -123,33 +130,88 @@ sensor:
       id: sensor_bms1_voltage
       on_raw_value:
         then:
-          - lambda: 'id(bms1_data_ready) = true;'
+          - lambda: |-
+              battery_telemetry::snapshot().record(0, battery_telemetry::VOLTAGE, x, millis());
+              id(bms1_data_ready) = battery_telemetry::snapshot().sample_ready(0, millis());
     current:
       name: "current_bms1"
       id: sensor_bms1_current
+      on_raw_value:
+        then:
+          - lambda: |-
+              battery_telemetry::snapshot().record(0, battery_telemetry::CURRENT, x, millis());
+              id(bms1_data_ready) = battery_telemetry::snapshot().sample_ready(0, millis());
     power:
       name: "power_bms1"
       id: sensor_bms1_power
     state_of_charge:
       name: "soc_bms1"
       id: sensor_bms1_soc
+      on_raw_value:
+        then:
+          - lambda: |-
+              battery_telemetry::snapshot().record(0, battery_telemetry::SOC, x, millis());
+              id(bms1_data_ready) = battery_telemetry::snapshot().sample_ready(0, millis());
     capacity_remaining:
       name: "capacity_remaining_bms1"
       id: sensor_bms1_capacity
+      on_raw_value:
+        then:
+          - lambda: |-
+              battery_telemetry::snapshot().record(0, battery_telemetry::CAPACITY, x, millis());
+              id(bms1_data_ready) = battery_telemetry::snapshot().sample_ready(0, millis());
     charging_cycles:
       name: "cycles_bms1"
+      on_raw_value:
+        then:
+          - lambda: |-
+              battery_telemetry::snapshot().record(0, battery_telemetry::CYCLES, x, millis());
+              id(bms1_data_ready) = battery_telemetry::snapshot().sample_ready(0, millis());
     temperature_1:
       name: "temperature1_bms1"
+      on_raw_value:
+        then:
+          - lambda: |-
+              battery_telemetry::snapshot().record(0, battery_telemetry::TEMPERATURE, x, millis());
+              id(bms1_data_ready) = battery_telemetry::snapshot().sample_ready(0, millis());
     cell_voltage_1:
       name: "voltage_cell1_bms1"
+      on_raw_value:
+        then:
+          - lambda: |-
+              battery_telemetry::snapshot().record(0, battery_telemetry::CELL1, x, millis());
+              id(bms1_data_ready) = battery_telemetry::snapshot().sample_ready(0, millis());
     cell_voltage_2:
       name: "voltage_cell2_bms1"
+      on_raw_value:
+        then:
+          - lambda: |-
+              battery_telemetry::snapshot().record(0, battery_telemetry::CELL2, x, millis());
+              id(bms1_data_ready) = battery_telemetry::snapshot().sample_ready(0, millis());
     cell_voltage_3:
       name: "voltage_cell3_bms1"
+      on_raw_value:
+        then:
+          - lambda: |-
+              battery_telemetry::snapshot().record(0, battery_telemetry::CELL3, x, millis());
+              id(bms1_data_ready) = battery_telemetry::snapshot().sample_ready(0, millis());
     cell_voltage_4:
       name: "voltage_cell4_bms1"
+      on_raw_value:
+        then:
+          - lambda: |-
+              battery_telemetry::snapshot().record(0, battery_telemetry::CELL4, x, millis());
+              id(bms1_data_ready) = battery_telemetry::snapshot().sample_ready(0, millis());
 
-  # BMS 2
+    operation_status_bitmask:
+      id: status_bits_bms1
+      internal: true
+      on_raw_value:
+        then:
+          - lambda: |-
+              battery_telemetry::snapshot().record(0, battery_telemetry::STATUS, x, millis());
+              id(bms1_data_ready) = battery_telemetry::snapshot().sample_ready(0, millis());
+
   - platform: jbd_bms_ble
     jbd_bms_ble_id: bms2
     total_voltage:
@@ -157,33 +219,88 @@ sensor:
       id: sensor_bms2_voltage
       on_raw_value:
         then:
-          - lambda: 'id(bms2_data_ready) = true;'
+          - lambda: |-
+              battery_telemetry::snapshot().record(1, battery_telemetry::VOLTAGE, x, millis());
+              id(bms2_data_ready) = battery_telemetry::snapshot().sample_ready(1, millis());
     current:
       name: "current_bms2"
       id: sensor_bms2_current
+      on_raw_value:
+        then:
+          - lambda: |-
+              battery_telemetry::snapshot().record(1, battery_telemetry::CURRENT, x, millis());
+              id(bms2_data_ready) = battery_telemetry::snapshot().sample_ready(1, millis());
     power:
       name: "power_bms2"
       id: sensor_bms2_power
     state_of_charge:
       name: "soc_bms2"
       id: sensor_bms2_soc
+      on_raw_value:
+        then:
+          - lambda: |-
+              battery_telemetry::snapshot().record(1, battery_telemetry::SOC, x, millis());
+              id(bms2_data_ready) = battery_telemetry::snapshot().sample_ready(1, millis());
     capacity_remaining:
       name: "capacity_remaining_bms2"
       id: sensor_bms2_capacity
+      on_raw_value:
+        then:
+          - lambda: |-
+              battery_telemetry::snapshot().record(1, battery_telemetry::CAPACITY, x, millis());
+              id(bms2_data_ready) = battery_telemetry::snapshot().sample_ready(1, millis());
     charging_cycles:
       name: "cycles_bms2"
+      on_raw_value:
+        then:
+          - lambda: |-
+              battery_telemetry::snapshot().record(1, battery_telemetry::CYCLES, x, millis());
+              id(bms2_data_ready) = battery_telemetry::snapshot().sample_ready(1, millis());
     temperature_1:
       name: "temperature1_bms2"
+      on_raw_value:
+        then:
+          - lambda: |-
+              battery_telemetry::snapshot().record(1, battery_telemetry::TEMPERATURE, x, millis());
+              id(bms2_data_ready) = battery_telemetry::snapshot().sample_ready(1, millis());
     cell_voltage_1:
       name: "voltage_cell1_bms2"
+      on_raw_value:
+        then:
+          - lambda: |-
+              battery_telemetry::snapshot().record(1, battery_telemetry::CELL1, x, millis());
+              id(bms2_data_ready) = battery_telemetry::snapshot().sample_ready(1, millis());
     cell_voltage_2:
       name: "voltage_cell2_bms2"
+      on_raw_value:
+        then:
+          - lambda: |-
+              battery_telemetry::snapshot().record(1, battery_telemetry::CELL2, x, millis());
+              id(bms2_data_ready) = battery_telemetry::snapshot().sample_ready(1, millis());
     cell_voltage_3:
       name: "voltage_cell3_bms2"
+      on_raw_value:
+        then:
+          - lambda: |-
+              battery_telemetry::snapshot().record(1, battery_telemetry::CELL3, x, millis());
+              id(bms2_data_ready) = battery_telemetry::snapshot().sample_ready(1, millis());
     cell_voltage_4:
       name: "voltage_cell4_bms2"
+      on_raw_value:
+        then:
+          - lambda: |-
+              battery_telemetry::snapshot().record(1, battery_telemetry::CELL4, x, millis());
+              id(bms2_data_ready) = battery_telemetry::snapshot().sample_ready(1, millis());
 
-  # BMS 3
+    operation_status_bitmask:
+      id: status_bits_bms2
+      internal: true
+      on_raw_value:
+        then:
+          - lambda: |-
+              battery_telemetry::snapshot().record(1, battery_telemetry::STATUS, x, millis());
+              id(bms2_data_ready) = battery_telemetry::snapshot().sample_ready(1, millis());
+
   - platform: jbd_bms_ble
     jbd_bms_ble_id: bms3
     total_voltage:
@@ -191,33 +308,88 @@ sensor:
       id: sensor_bms3_voltage
       on_raw_value:
         then:
-          - lambda: 'id(bms3_data_ready) = true;'
+          - lambda: |-
+              battery_telemetry::snapshot().record(2, battery_telemetry::VOLTAGE, x, millis());
+              id(bms3_data_ready) = battery_telemetry::snapshot().sample_ready(2, millis());
     current:
       name: "current_bms3"
       id: sensor_bms3_current
+      on_raw_value:
+        then:
+          - lambda: |-
+              battery_telemetry::snapshot().record(2, battery_telemetry::CURRENT, x, millis());
+              id(bms3_data_ready) = battery_telemetry::snapshot().sample_ready(2, millis());
     power:
       name: "power_bms3"
       id: sensor_bms3_power
     state_of_charge:
       name: "soc_bms3"
       id: sensor_bms3_soc
+      on_raw_value:
+        then:
+          - lambda: |-
+              battery_telemetry::snapshot().record(2, battery_telemetry::SOC, x, millis());
+              id(bms3_data_ready) = battery_telemetry::snapshot().sample_ready(2, millis());
     capacity_remaining:
       name: "capacity_remaining_bms3"
       id: sensor_bms3_capacity
+      on_raw_value:
+        then:
+          - lambda: |-
+              battery_telemetry::snapshot().record(2, battery_telemetry::CAPACITY, x, millis());
+              id(bms3_data_ready) = battery_telemetry::snapshot().sample_ready(2, millis());
     charging_cycles:
       name: "cycles_bms3"
+      on_raw_value:
+        then:
+          - lambda: |-
+              battery_telemetry::snapshot().record(2, battery_telemetry::CYCLES, x, millis());
+              id(bms3_data_ready) = battery_telemetry::snapshot().sample_ready(2, millis());
     temperature_1:
       name: "temperature1_bms3"
+      on_raw_value:
+        then:
+          - lambda: |-
+              battery_telemetry::snapshot().record(2, battery_telemetry::TEMPERATURE, x, millis());
+              id(bms3_data_ready) = battery_telemetry::snapshot().sample_ready(2, millis());
     cell_voltage_1:
       name: "voltage_cell1_bms3"
+      on_raw_value:
+        then:
+          - lambda: |-
+              battery_telemetry::snapshot().record(2, battery_telemetry::CELL1, x, millis());
+              id(bms3_data_ready) = battery_telemetry::snapshot().sample_ready(2, millis());
     cell_voltage_2:
       name: "voltage_cell2_bms3"
+      on_raw_value:
+        then:
+          - lambda: |-
+              battery_telemetry::snapshot().record(2, battery_telemetry::CELL2, x, millis());
+              id(bms3_data_ready) = battery_telemetry::snapshot().sample_ready(2, millis());
     cell_voltage_3:
       name: "voltage_cell3_bms3"
+      on_raw_value:
+        then:
+          - lambda: |-
+              battery_telemetry::snapshot().record(2, battery_telemetry::CELL3, x, millis());
+              id(bms3_data_ready) = battery_telemetry::snapshot().sample_ready(2, millis());
     cell_voltage_4:
       name: "voltage_cell4_bms3"
+      on_raw_value:
+        then:
+          - lambda: |-
+              battery_telemetry::snapshot().record(2, battery_telemetry::CELL4, x, millis());
+              id(bms3_data_ready) = battery_telemetry::snapshot().sample_ready(2, millis());
 
-  # BMS 4
+    operation_status_bitmask:
+      id: status_bits_bms3
+      internal: true
+      on_raw_value:
+        then:
+          - lambda: |-
+              battery_telemetry::snapshot().record(2, battery_telemetry::STATUS, x, millis());
+              id(bms3_data_ready) = battery_telemetry::snapshot().sample_ready(2, millis());
+
   - platform: jbd_bms_ble
     jbd_bms_ble_id: bms4
     total_voltage:
@@ -225,33 +397,88 @@ sensor:
       id: sensor_bms4_voltage
       on_raw_value:
         then:
-          - lambda: 'id(bms4_data_ready) = true;'
+          - lambda: |-
+              battery_telemetry::snapshot().record(3, battery_telemetry::VOLTAGE, x, millis());
+              id(bms4_data_ready) = battery_telemetry::snapshot().sample_ready(3, millis());
     current:
       name: "current_bms4"
       id: sensor_bms4_current
+      on_raw_value:
+        then:
+          - lambda: |-
+              battery_telemetry::snapshot().record(3, battery_telemetry::CURRENT, x, millis());
+              id(bms4_data_ready) = battery_telemetry::snapshot().sample_ready(3, millis());
     power:
       name: "power_bms4"
       id: sensor_bms4_power
     state_of_charge:
       name: "soc_bms4"
       id: sensor_bms4_soc
+      on_raw_value:
+        then:
+          - lambda: |-
+              battery_telemetry::snapshot().record(3, battery_telemetry::SOC, x, millis());
+              id(bms4_data_ready) = battery_telemetry::snapshot().sample_ready(3, millis());
     capacity_remaining:
       name: "capacity_remaining_bms4"
       id: sensor_bms4_capacity
+      on_raw_value:
+        then:
+          - lambda: |-
+              battery_telemetry::snapshot().record(3, battery_telemetry::CAPACITY, x, millis());
+              id(bms4_data_ready) = battery_telemetry::snapshot().sample_ready(3, millis());
     charging_cycles:
       name: "cycles_bms4"
+      on_raw_value:
+        then:
+          - lambda: |-
+              battery_telemetry::snapshot().record(3, battery_telemetry::CYCLES, x, millis());
+              id(bms4_data_ready) = battery_telemetry::snapshot().sample_ready(3, millis());
     temperature_1:
       name: "temperature1_bms4"
+      on_raw_value:
+        then:
+          - lambda: |-
+              battery_telemetry::snapshot().record(3, battery_telemetry::TEMPERATURE, x, millis());
+              id(bms4_data_ready) = battery_telemetry::snapshot().sample_ready(3, millis());
     cell_voltage_1:
       name: "voltage_cell1_bms4"
+      on_raw_value:
+        then:
+          - lambda: |-
+              battery_telemetry::snapshot().record(3, battery_telemetry::CELL1, x, millis());
+              id(bms4_data_ready) = battery_telemetry::snapshot().sample_ready(3, millis());
     cell_voltage_2:
       name: "voltage_cell2_bms4"
+      on_raw_value:
+        then:
+          - lambda: |-
+              battery_telemetry::snapshot().record(3, battery_telemetry::CELL2, x, millis());
+              id(bms4_data_ready) = battery_telemetry::snapshot().sample_ready(3, millis());
     cell_voltage_3:
       name: "voltage_cell3_bms4"
+      on_raw_value:
+        then:
+          - lambda: |-
+              battery_telemetry::snapshot().record(3, battery_telemetry::CELL3, x, millis());
+              id(bms4_data_ready) = battery_telemetry::snapshot().sample_ready(3, millis());
     cell_voltage_4:
       name: "voltage_cell4_bms4"
+      on_raw_value:
+        then:
+          - lambda: |-
+              battery_telemetry::snapshot().record(3, battery_telemetry::CELL4, x, millis());
+              id(bms4_data_ready) = battery_telemetry::snapshot().sample_ready(3, millis());
 
-  # ESP32 Status
+    operation_status_bitmask:
+      id: status_bits_bms4
+      internal: true
+      on_raw_value:
+        then:
+          - lambda: |-
+              battery_telemetry::snapshot().record(3, battery_telemetry::STATUS, x, millis());
+              id(bms4_data_ready) = battery_telemetry::snapshot().sample_ready(3, millis());
+
   - platform: wifi_signal
     name: "wifi_signal"
     update_interval: 60s
@@ -267,6 +494,7 @@ sensor:
     accuracy_decimals: 2
     update_interval: never
     lambda: |-
+      if (!battery_telemetry::snapshot().ready(millis())) return NAN;
       float total = 0; int count = 0;
       if (id(sensor_bms1_voltage).has_state() && id(sensor_bms1_voltage).state > 0) { total += id(sensor_bms1_voltage).state; count++; }
       if (id(sensor_bms2_voltage).has_state() && id(sensor_bms2_voltage).state > 0) { total += id(sensor_bms2_voltage).state; count++; }
@@ -284,6 +512,7 @@ sensor:
     accuracy_decimals: 1
     update_interval: never
     lambda: |-
+      if (!battery_telemetry::snapshot().ready(millis())) return NAN;
       float total = 0;
       if (id(sensor_bms1_power).has_state()) total += id(sensor_bms1_power).state;
       if (id(sensor_bms2_power).has_state()) total += id(sensor_bms2_power).state;
@@ -310,6 +539,7 @@ sensor:
     accuracy_decimals: 0
     update_interval: never
     lambda: |-
+      if (!battery_telemetry::snapshot().ready(millis())) return NAN;
       std::vector<float> socs;
       if (id(sensor_bms1_soc).has_state()) socs.push_back(id(sensor_bms1_soc).state);
       if (id(sensor_bms2_soc).has_state()) socs.push_back(id(sensor_bms2_soc).state);
@@ -334,6 +564,7 @@ sensor:
     accuracy_decimals: 1
     update_interval: never
     lambda: |-
+      if (!battery_telemetry::snapshot().ready(millis())) return NAN;
       std::vector<float> values;
       if (id(sensor_bms1_capacity).has_state() && id(sensor_bms1_capacity).state > 5) values.push_back(id(sensor_bms1_capacity).state);
       if (id(sensor_bms2_capacity).has_state() && id(sensor_bms2_capacity).state > 5) values.push_back(id(sensor_bms2_capacity).state);
@@ -417,37 +648,42 @@ script:
   - id: poll_all_bms
     mode: restart
     then:
+      - lambda: battery_telemetry::snapshot().begin_round();
       # BMS 1
-      - lambda: 'id(bms1_data_ready) = false; id(bms1).update();'
+      - lambda: 'id(bms1_data_ready) = false; battery_telemetry::snapshot().begin_sample(0); id(bms1).update();'
       - wait_until:
           condition:
             lambda: 'return id(bms1_data_ready);'
           timeout: 3s
       - lambda: 'if (!id(bms1_data_ready)) ESP_LOGW("poll", "B1: Timeout");'
+      - lambda: battery_telemetry::snapshot().end_sample(0);
 
       # BMS 2
-      - lambda: 'id(bms2_data_ready) = false; id(bms2).update();'
+      - lambda: 'id(bms2_data_ready) = false; battery_telemetry::snapshot().begin_sample(1); id(bms2).update();'
       - wait_until:
           condition:
             lambda: 'return id(bms2_data_ready);'
           timeout: 3s
       - lambda: 'if (!id(bms2_data_ready)) ESP_LOGW("poll", "B2: Timeout");'
+      - lambda: battery_telemetry::snapshot().end_sample(1);
 
       # BMS 3
-      - lambda: 'id(bms3_data_ready) = false; id(bms3).update();'
+      - lambda: 'id(bms3_data_ready) = false; battery_telemetry::snapshot().begin_sample(2); id(bms3).update();'
       - wait_until:
           condition:
             lambda: 'return id(bms3_data_ready);'
           timeout: 3s
       - lambda: 'if (!id(bms3_data_ready)) ESP_LOGW("poll", "B3: Timeout");'
+      - lambda: battery_telemetry::snapshot().end_sample(2);
 
       # BMS 4
-      - lambda: 'id(bms4_data_ready) = false; id(bms4).update();'
+      - lambda: 'id(bms4_data_ready) = false; battery_telemetry::snapshot().begin_sample(3); id(bms4).update();'
       - wait_until:
           condition:
             lambda: 'return id(bms4_data_ready);'
           timeout: 3s
       - lambda: 'if (!id(bms4_data_ready)) ESP_LOGW("poll", "B4: Timeout");'
+      - lambda: battery_telemetry::snapshot().end_sample(3);
 
       # Update aggregated sensors
       - lambda: |-
@@ -456,6 +692,59 @@ script:
           id(chain2_total_current_sensor).update();
           id(chain2_min_soc_sensor).update();
           id(chain2_capacity_remaining_sensor).update();
+
+      # Atomic live-only contract consumed by dbus-mqtt-battery.
+      - if:
+          condition:
+            mqtt.connected:
+          then:
+            - mqtt.publish_json:
+                topic: battery2/telemetry
+                qos: 0
+                retain: false
+                payload: |-
+                  const uint32_t now = millis();
+                  root["schema"] = 1;
+                  root["boot_id"] = battery_telemetry::snapshot().boot_id();
+                  root["seq"] = battery_telemetry::snapshot().next_sequence();
+                  root["ready"] = battery_telemetry::snapshot().ready(now);
+                  root["valid_mask"] = battery_telemetry::snapshot().valid_mask(now);
+                  auto batteries = root["batteries"].to<JsonArray>();
+                  for (unsigned i = 0; i < 4; ++i) {
+                    auto battery = batteries.add<JsonObject>();
+                    battery["id"] = i + 1;
+                    battery["age_ms"] = battery_telemetry::snapshot().age_ms(i, now);
+                    battery["online"] = battery_telemetry::snapshot().sample_ready(i, now);
+                    battery["seen_mask"] = battery_telemetry::snapshot().seen_mask(i);
+                    battery["valid_mask"] = battery_telemetry::snapshot().valid_fields_mask(i);
+                    battery["observed_age_ms"] = battery_telemetry::snapshot().observed_age_ms(i, now);
+                    if (std::isfinite(battery_telemetry::snapshot().value(i, battery_telemetry::STATUS))) {
+                      battery["charging"] = battery_telemetry::snapshot().permission(i, 1);
+                      battery["discharging"] = battery_telemetry::snapshot().permission(i, 2);
+                    } else {
+                      battery["charging"] = nullptr;
+                      battery["discharging"] = nullptr;
+                    }
+                    const char *names[] = {"voltage", "current", "soc", "temperature"};
+                    for (unsigned f = 0; f < 4; ++f) {
+                      const float value = battery_telemetry::snapshot().value(i, static_cast<battery_telemetry::Field>(f));
+                      if (std::isfinite(value)) battery[names[f]] = value;
+                      else battery[names[f]] = nullptr;
+                    }
+                    auto temperatures = battery["temperatures"].to<JsonArray>();
+                    const float temperature = battery_telemetry::snapshot().value(i, battery_telemetry::TEMPERATURE);
+                    if (std::isfinite(temperature)) temperatures.add(temperature);
+                    auto cells = battery["cells"].to<JsonArray>();
+                    for (unsigned cell = 0; cell < 4; ++cell) {
+                      const float value = battery_telemetry::snapshot().value(i, static_cast<battery_telemetry::Field>(battery_telemetry::CELL1 + cell));
+                      if (std::isfinite(value)) cells.add(value);
+                      else cells.add(nullptr);
+                    }
+                    const float capacity = battery_telemetry::snapshot().value(i, battery_telemetry::CAPACITY);
+                    if (std::isfinite(capacity)) battery["capacity"] = capacity;
+                    const float cycles = battery_telemetry::snapshot().value(i, battery_telemetry::CYCLES);
+                    if (std::isfinite(cycles)) battery["cycles"] = cycles;
+                  }
 
       - delay: 100ms
       - script.execute: poll_all_bms
