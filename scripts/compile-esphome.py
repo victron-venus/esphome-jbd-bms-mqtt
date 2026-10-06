@@ -82,6 +82,17 @@ def stage_configs(root, stage, selected):
         shared = "packages/mqtt-availability.yaml"
         (stage / "packages").mkdir(parents=True, exist_ok=True)
         shutil.copyfile(confined_config(root, shared), stage / shared)
+        header = root / "components/battery_telemetry.h"
+        if (
+            header.is_symlink()
+            or not header.is_file()
+            or not header.resolve().is_relative_to(root.resolve())
+        ):
+            raise ValueError(
+                "Telemetry header must be a regular file inside the repository"
+            )
+        (stage / "components").mkdir(parents=True, exist_ok=True)
+        shutil.copyfile(header, stage / "components/battery_telemetry.h")
         for name in selected:
             target = stage / name
             target.parent.mkdir(parents=True, exist_ok=True)

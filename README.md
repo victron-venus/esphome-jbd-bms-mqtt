@@ -21,6 +21,9 @@
 
 ESP32-based Bluetooth proxy for JBD BMS batteries, publishing data via MQTT to Victron Venus OS.
 
+The two current chain monitors also publish [atomic battery telemetry](docs/battery-telemetry.md)
+with boot identity, freshness and complete-round readiness for startup and MQTT reconnects.
+
 > **Note**: This project requires [dbus-mqtt-battery](https://github.com/victron-venus/dbus-mqtt-battery) running on Venus OS to integrate MQTT data into the Victron system.
 
 <!-- ci-release-process:start -->
@@ -183,6 +186,14 @@ mqtt:
 ```
 
 ## Compiling and Uploading
+
+Keep `components/battery_telemetry.h` and `packages/mqtt-availability.yaml`
+beside the current four-BMS YAML, preserving those relative directories. When
+using an ESPHome dashboard, save the matching YAML and header after a verified
+OTA so a later dashboard build retains the same telemetry contract. Apply changes
+to the device's existing configuration and preserve its credentials, identity,
+BLE settings and installed ESPHome version. See the
+[telemetry contract](docs/battery-telemetry.md) for consumer requirements.
 
 ### First Flash (USB Required)
 

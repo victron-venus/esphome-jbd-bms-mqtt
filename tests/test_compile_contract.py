@@ -25,9 +25,17 @@ class ConfigSelectionTests(unittest.TestCase):
             (root / "firmware.yaml").write_text("esphome: {}\n")
             shared = root / "packages/mqtt-availability.yaml"
             shared.write_text("interval: []\n")
+            (root / "components").mkdir()
+            header = root / "components/battery_telemetry.h"
+            header.write_text("#pragma once\n")
             (root / "secrets.yaml").write_text("wifi_pass: real-private-value\n")
             ADAPTER.stage_configs(root, stage, ["firmware.yaml"])
-            self.assertEqual((stage / shared.relative_to(root)).read_text(), shared.read_text())
+            self.assertEqual(
+                (stage / shared.relative_to(root)).read_text(), shared.read_text()
+            )
+            self.assertEqual(
+                (stage / header.relative_to(root)).read_text(), header.read_text()
+            )
             self.assertNotIn("real-private-value", (stage / "secrets.yaml").read_text())
             shared.unlink()
             shared.symlink_to(root / "firmware.yaml")
@@ -44,7 +52,8 @@ class ConfigSelectionTests(unittest.TestCase):
                 ADAPTER.selected_configs(root, policy, []), ["firmware.yaml"]
             )
             self.assertEqual(
-                ADAPTER.confined_config(root, "firmware.yaml"), (root / "firmware.yaml").resolve()
+                ADAPTER.confined_config(root, "firmware.yaml"),
+                (root / "firmware.yaml").resolve(),
             )
 
     def test_traversal_options_absolute_paths_and_wrong_extensions_are_rejected(self):
