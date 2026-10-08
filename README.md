@@ -73,7 +73,7 @@ flowchart LR
 | `jbd-all-batteries1.yaml` | Chain 1 - Primary ESP32 | BMS 1-4 |
 | `jbd-all-batteries2.yaml` | Chain 2 - Secondary ESP32 | BMS 5-8 |
 | `jbd-all-batteries.yaml` | Legacy 8-BMS config (archive) | BMS 1-8 |
-| `secrets.yaml` | WiFi and sensitive credentials | - |
+| `secrets.example.yaml` | Incomplete template for local private credentials | - |
 
 ## Installation on macOS
 
@@ -153,11 +153,19 @@ cp -r /tmp/esphome-jbd-bms-main/components ./components/
 
 ## Configuration
 
-### 1. Edit secrets.yaml
+### 1. Create private secrets.yaml
+
+Back up existing local credentials before updating the checkout. Copy
+`secrets.example.yaml` to `secrets.yaml` in each device's private configuration
+directory and replace every null. Generate a unique API key and recovery-AP
+password as described in [firmware management access](docs/firmware-access.md).
+Never commit the resulting file or compiled firmware.
 
 ```yaml
-wifi_ssid: "YOUR_WIFI_SSID"
-wifi_pass: "YOUR_WIFI_PASSWORD"
+wifi_ssid: null
+wifi_pass: null
+fallback_ap_password: null
+api_encryption_key: null
 ```
 
 ### 2. Update BMS MAC Addresses
@@ -187,12 +195,17 @@ mqtt:
 
 ## Compiling and Uploading
 
+The default profiles now require encrypted API/OTA and disable HTTP/captive
+access. Review the [migration procedure](docs/firmware-access.md) before updating
+an existing device; an old plaintext OTA endpoint cannot accept the final
+encrypted profile directly. Serial provisioning is preferred.
+
 Keep `components/battery_telemetry.h` and `packages/mqtt-availability.yaml`
 beside the current four-BMS YAML, preserving those relative directories. When
 using an ESPHome dashboard, save the matching YAML and header after a verified
 OTA so a later dashboard build retains the same telemetry contract. Apply changes
 to the device's existing configuration and preserve its credentials, identity,
-BLE settings and installed ESPHome version. See the
+BLE settings, and review compatibility before changing the installed ESPHome version. See the
 [telemetry contract](docs/battery-telemetry.md) for consumer requirements.
 
 ### First Flash (USB Required)
@@ -213,7 +226,8 @@ Select the USB port when prompted (e.g., `/dev/cu.usbserial-0001`).
 
 ### OTA Updates (Wireless)
 
-After initial flash, update wirelessly:
+After installing and verifying the encrypted profile, update wirelessly with
+the same device key:
 
 ```bash
 # Compile only
@@ -245,14 +259,12 @@ esphome logs jbd-all-batteries1.yaml --device <ESP32_IP>
 
 ## ESP32 Web Interface
 
-After flashing, access the ESP32 web interface:
-
-- **URL**: `http://jbd-all-batteries.local` or `http://<ESP32_IP>`
-- **Features**:
-  - Real-time sensor values
-  - WiFi signal strength
-  - Restart button
-  - OTA upload
+The default profiles no longer expose an HTTP web interface or captive portal.
+Use the encrypted native API for diagnostics and native OTA for firmware updates.
+The recovery Wi-Fi AP remains password protected and supports those encrypted
+services. See [firmware management access](docs/firmware-access.md) for the behavior
+change and existing-device migration; adding HTTP components locally reintroduces
+a separate access path that the API/OTA key does not protect.
 
 ## MQTT Topics
 
@@ -335,7 +347,8 @@ Example: ECO-WORTHY 12V 280Ah LiFePO4 with built-in JBD BMS
 ```
 esphome/
 ├── README.md                 # This file
-├── secrets.yaml              # WiFi credentials (not in git)
+├── secrets.example.yaml      # Incomplete template (tracked)
+├── secrets.yaml              # Per-device private credentials (ignored)
 ├── jbd-all-batteries1.yaml   # Chain 1 config (4 BMS)
 ├── jbd-all-batteries2.yaml   # Chain 2 config (4 BMS)
 ├── jbd-all-batteries.yaml    # Legacy 8 BMS config
@@ -426,7 +439,7 @@ See [ESPHome MQTT discovery configuration](https://esphome.io/components/mqtt/#c
 
 Changes to YAML and workflow files run validation and compilation for all three
 configurations. CI uses the ESPHome 2026.10.0b1 prerelease on Linux with CPython
-3.12 and a pinned esphome-jbd-bms revision, with placeholder Wi-Fi credentials.
+3.12 and a pinned esphome-jbd-bms revision, with temporary generated credentials.
 The compiler and build backends are hash-locked; see the supported environment
 and upgrade rationale in [CI_WORKFLOW.md](docs/CI_WORKFLOW.md).
 Compilation never uploads firmware.
