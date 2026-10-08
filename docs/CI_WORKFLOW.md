@@ -33,8 +33,10 @@ PlatformIO 6.2.0, which permits the patched Starlette dependency; the previous
 ESPHome 2026.8.2 / PlatformIO 6.1.19 combination pinned a vulnerable version.
 The compiler lock deliberately targets Linux: the upstream prerelease's Intel
 macOS dependency constraint still selects an affected cryptography version.
-The installer rejects unsupported operating systems, Python implementations
-and Python versions before invoking pip. This CI choice does not recommend a
+The compiler job uses custom runners only when their configured labels include
+`linux`; otherwise it uses hosted `ubuntu-latest`. The installer also rejects
+unsupported operating systems, Python implementations and Python versions
+before invoking pip. This CI choice does not recommend a
 prerelease for production devices or establish macOS/Windows compiler support.
 
 Both `.github/requirements-build.txt` and `.github/requirements-esphome.txt`
