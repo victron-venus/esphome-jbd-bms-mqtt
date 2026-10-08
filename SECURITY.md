@@ -14,6 +14,12 @@ Security fixes are developed on the current default branch and released through 
 
 Wi-Fi, MQTT, Bluetooth device selection and OTA access are trust boundaries. Replace example secrets locally, restrict broker publishers and OTA access, and never commit live credentials. Firmware compilation does not verify electrical safety or compatibility with a particular BMS.
 
+The default firmware profiles require an API encryption key and encrypted native
+OTA, and disable HTTP/captive-portal management. The recovery AP uses a separate
+private password. Follow [firmware management access](docs/firmware-access.md)
+before migrating installed devices; the first legacy OTA bridge upload can be
+plaintext. MQTT and the BMS Bluetooth link are outside this encrypted profile.
+
 ## Secure development and delivery
 
 Validate external values at trust boundaries, reject unsupported or malformed commands, avoid shell interpolation, preserve certificate verification, and use maintained cryptographic libraries rather than custom cryptography. Apply least privilege to service accounts, repository tokens and filesystem permissions. Follow [CONTRIBUTING.md](CONTRIBUTING.md) for validation and review.

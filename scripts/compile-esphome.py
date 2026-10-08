@@ -3,8 +3,10 @@
 
 # Preserve the existing operator-facing CLI filename.
 # pylint: disable=invalid-name
+import base64
 import json
 import re
+import secrets
 import shutil
 import subprocess
 import sys
@@ -97,10 +99,45 @@ def stage_configs(root, stage, selected):
             target = stage / name
             target.parent.mkdir(parents=True, exist_ok=True)
             shutil.copyfile(confined_config(root, name), target)
+        # Generated only inside the temporary build, never an operator default.
         (stage / SECRETS).write_text(
-            "wifi_ssid: ci-validation\nwifi_pass: ci-validation-password\n",
+            yaml.safe_dump(
+                {
+                    "wifi_ssid": "ci-validation",
+                    "wifi_pass": secrets.token_urlsafe(24),
+                    "fallback_ap_password": secrets.token_urlsafe(24),
+                    "api_encryption_key": base64.b64encode(
+                        secrets.token_bytes(32)
+                    ).decode(),
+                }
+            ),
             encoding="utf-8",
         )
+
+
+def verify_encrypted_build(stage):
+    """Reject a generated build with plaintext API/OTA or an HTTP recovery route."""
+    headers = list((stage / ".esphome/build").glob("*/src/esphome/core/defines.h"))
+    if not headers:
+        raise ValueError("ESPHome generated no feature definitions")
+    required = {"USE_API_NOISE", "USE_OTA_ENCRYPTION", "USE_OTA_ENCRYPTION_REQUIRED"}
+    forbidden = {
+        "USE_API_PLAINTEXT",
+        "USE_OTA_PASSWORD",
+        "USE_WEBSERVER",
+        "USE_WEBSERVER_OTA",
+        "USE_CAPTIVE_PORTAL",
+    }
+    for header in headers:
+        flags = {
+            line.split()[1]
+            for line in header.read_text().splitlines()
+            if line.startswith("#define ") and len(line.split()) >= 2
+        }
+        if not required <= flags or forbidden & flags:
+            raise ValueError(
+                "Firmware must require encrypted API/OTA without HTTP access"
+            )
 
 
 def main(arguments=None):
@@ -122,6 +159,7 @@ def main(arguments=None):
                 [executable, "config", config], check=True, stdout=subprocess.DEVNULL
             )
             subprocess.run([executable, "compile", config], check=True)
+            verify_encrypted_build(stage)
     print(
         "Firmware compiled without flashing; runtime behavior needs physical hardware."
     )

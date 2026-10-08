@@ -8,6 +8,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Security
+- Require a private API encryption key and encrypted native OTA in all firmware
+  profiles. Remove HTTP/captive-portal management and use a separate recovery-AP
+  password. Existing devices need the [documented migration](docs/firmware-access.md)
+  before installing this profile; browser management is no longer available.
 - Hash-lock the Linux CPython 3.12 firmware compiler and build backends. Use the
   official ESPHome 2026.10.0b1 prerelease constraints to remove the vulnerable
   Starlette pin, and reject unsupported installer platforms before pip runs.
