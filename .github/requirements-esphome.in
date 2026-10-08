@@ -1,0 +1,4 @@
+# This compiler lock supports Linux CI only. The installer enforces the host.
+esphome==2026.10.0b1 ; sys_platform == 'linux'
+# Required by the ESP32 firmware image generator.
+crcmod==1.7 ; sys_platform == 'linux'

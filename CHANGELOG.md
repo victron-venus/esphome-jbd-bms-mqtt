@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Security
+- Hash-lock the Linux CPython 3.12 firmware compiler and build backends. Use the
+  official ESPHome 2026.10.0b1 prerelease constraints to remove the vulnerable
+  Starlette pin, and reject unsupported installer platforms before pip runs.
+
 ## [1.0.1] - 2026-03-29
 
 ### Added

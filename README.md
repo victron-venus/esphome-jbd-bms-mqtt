@@ -425,8 +425,11 @@ afterwards. This does not change any BMS protection or charging settings.
 See [ESPHome MQTT discovery configuration](https://esphome.io/components/mqtt/#configuration-variables).
 
 Changes to YAML and workflow files run validation and compilation for all three
-configurations. CI uses ESPHome 2026.8.2 and a pinned esphome-jbd-bms revision,
-with placeholder Wi-Fi credentials. Compilation never uploads firmware.
+configurations. CI uses the ESPHome 2026.10.0b1 prerelease on Linux with CPython
+3.12 and a pinned esphome-jbd-bms revision, with placeholder Wi-Fi credentials.
+The compiler and build backends are hash-locked; see the supported environment
+and upgrade rationale in [CI_WORKFLOW.md](docs/CI_WORKFLOW.md).
+Compilation never uploads firmware.
 The upgrade from 2024.12 is required for the existing minimum-chip-revision option;
 the BLE advertisement trigger uses the supported `on_ble_advertise` name.
 

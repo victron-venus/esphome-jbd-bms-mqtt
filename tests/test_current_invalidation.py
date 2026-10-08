@@ -2,7 +2,7 @@
 
 ESPHome's TemplateSensor::update publishes only when the returned optional has
 a value. This fixture models that boundary, not sensor filters or hardware.
-https://github.com/esphome/esphome/blob/2026.8.2/esphome/components/template/sensor/template_sensor.cpp
+https://github.com/esphome/esphome/blob/2026.10.0b1/esphome/components/template/sensor/template_sensor.cpp
 """
 
 import re
