@@ -8,7 +8,8 @@ permissions:
 jobs:
   validate:
     name: ESPHome Config Validation & Compile
-    runs-on: ${{ fromJSON((vars.CI_RUNNER_MODE == 'self-hosted' || vars.CI_RUNNER_MODE == 'k3s') && ((github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository) || (contains(fromJSON('["push","schedule","workflow_dispatch"]'), github.event_name) && github.ref == format('refs/heads/{0}', github.event.repository.default_branch))) && (vars.CI_RUNNER_LABELS || '[]') || '["ubuntu-latest"]') }}
+    # The compiler lock supports Linux only; otherwise use the hosted Linux runner.
+    runs-on: ${{ fromJSON((vars.CI_RUNNER_MODE == 'self-hosted' || vars.CI_RUNNER_MODE == 'k3s') && ((github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository) || (contains(fromJSON('["push","schedule","workflow_dispatch"]'), github.event_name) && github.ref == format('refs/heads/{0}', github.event.repository.default_branch))) && contains(fromJSON(vars.CI_RUNNER_LABELS || '[]'), 'linux') && (vars.CI_RUNNER_LABELS || '[]') || '["ubuntu-latest"]') }}
     timeout-minutes: 30
     strategy:
       fail-fast: false
@@ -27,11 +28,8 @@ jobs:
         with:
           python-version: '3.12'
 
-      - name: Install ESPHome
-        # These three pinned dependencies publish source distributions only.
-        run: >-
-          pip install --only-binary :all: --no-binary paho-mqtt,esptool,crcmod
-          esphome==2026.8.2 paho-mqtt==1.6.1 esptool==5.3.1 crcmod==1.7
+      - name: Install the locked Linux compiler and build backends
+        run: python scripts/install-esphome.py
 
       - name: Compile with the local adapter and isolated dummy credentials
         env:
