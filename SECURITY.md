@@ -4,7 +4,7 @@
 
 Send vulnerability details privately using [GitHub's Report a vulnerability form](https://github.com/victron-venus/esphome-jbd-bms-mqtt/security/advisories/new). Include the affected commit or release, reproduction steps, impact and a suggested mitigation if known. Remove live secrets and personal information. Do not open a public issue with exploit details. If private reporting is temporarily unavailable, open a public issue requesting a confidential contact without disclosing the vulnerability.
 
-Maintainers aim to acknowledge reports within 14 days, investigate promptly and coordinate disclosure with the reporter. Critical confirmed vulnerabilities receive priority. Confirmed exploitable medium-or-higher issues should be corrected within 60 days of public disclosure; where a fix needs longer, publish the limitation and available mitigation. Release notes should identify any assigned CVE or equivalent advisory identifier for fixes. These are maintenance policies, not claims about historical response times.
+Maintainers aim to acknowledge reports within 14 days, investigate promptly and coordinate disclosure with the reporter. Critical confirmed vulnerabilities receive priority. Confirmed exploitable medium-or-higher issues should be corrected within 60 days of confirmation. Coordinate normal public disclosure with a fix or effective mitigation. If active exploitation or another urgent risk requires earlier warning, promptly publish the affected scope and available protective steps while remediation continues. Release notes should identify any assigned CVE or equivalent advisory identifier for fixes. These are maintenance policies, not claims about historical response times.
 
 ## Supported code
 
