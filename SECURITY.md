@@ -1,40 +1,23 @@
-# Security Policy
+# Security policy
 
-## Supported Versions
+## Reporting a vulnerability
 
-| Version | Supported          |
-| ------- | ------------------ |
-| 1.0.x   | :white_check_mark: |
+Send vulnerability details privately using [GitHub's Report a vulnerability form](https://github.com/victron-venus/esphome-jbd-bms-mqtt/security/advisories/new). Include the affected commit or release, reproduction steps, impact and a suggested mitigation if known. Remove live secrets and personal information. Do not open a public issue with exploit details. If private reporting is temporarily unavailable, open a public issue requesting a confidential contact without disclosing the vulnerability.
 
-## Reporting a Vulnerability
+Maintainers aim to acknowledge reports within 14 days, investigate promptly and coordinate disclosure with the reporter. Critical confirmed vulnerabilities receive priority. Confirmed exploitable medium-or-higher issues should be corrected within 60 days of public disclosure; where a fix needs longer, publish the limitation and available mitigation. Release notes should identify any assigned CVE or equivalent advisory identifier for fixes. These are maintenance policies, not claims about historical response times.
 
-Private vulnerability reporting is enabled for this repository. Use
-[Report a vulnerability](https://github.com/victron-venus/esphome-jbd-bms-mqtt/security/advisories/new)
-to send a confidential report to the maintainers. Follow
-[GitHub's private reporting instructions](https://docs.github.com/en/code-security/security-advisories/guidance-on-reporting-and-writing/privately-reporting-a-security-vulnerability)
-if you need help submitting the report.
+## Supported code
 
-Include the affected version or commit, steps to reproduce, expected and actual
-behavior, and potential impact. Remove access tokens, credentials and personal
-data from examples. Do not disclose exploit details in public issues before
-coordinating with the maintainers.
+Security fixes are developed on the current default branch and released through the repository's normal delivery process. Older releases are not guaranteed backports; reproduce against the current code where practical and include the original affected version in the report. A prerelease or development build is not a promise of production or hardware acceptance.
 
-## Security Considerations
+## Trust boundaries
 
-This project runs on ESP32 with access to:
+Wi-Fi, MQTT, Bluetooth device selection and OTA access are trust boundaries. Replace example secrets locally, restrict broker publishers and OTA access, and never commit live credentials. Firmware compilation does not verify electrical safety or compatibility with a particular BMS.
 
-- WiFi network
-- MQTT broker
-- Bluetooth (BMS devices)
+## Secure development and delivery
 
-### Recommendations
+Validate external values at trust boundaries, reject unsupported or malformed commands, avoid shell interpolation, preserve certificate verification, and use maintained cryptographic libraries rather than custom cryptography. Apply least privilege to service accounts, repository tokens and filesystem permissions. Follow [CONTRIBUTING.md](CONTRIBUTING.md) for validation and review.
 
-1. **secrets.yaml**: Never commit real credentials
-2. **MQTT**: Use authentication on your MQTT broker
-3. **WiFi**: Use WPA2/WPA3 encryption
-4. **OTA**: ESPHome OTA updates require password
+Obtain source and published artifacts through the repository's HTTPS URLs. Verify published checksums or provenance when provided, over an authenticated channel. Keep local configuration, credentials and private keys out of source control and logs. Report suspected exposure through the private channel so credentials can be revoked and replaced; deleting a file alone does not revoke it.
 
-## Known Limitations
-
-- MQTT connection without TLS by default
-- Designed for trusted home networks only
+[OpenSSF evidence and remaining verification](docs/openssf-evidence.md) is maintained separately from this policy.
