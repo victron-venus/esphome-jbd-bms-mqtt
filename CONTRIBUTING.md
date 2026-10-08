@@ -1,70 +1,32 @@
 # Contributing to esphome-jbd-bms-mqtt
 
-Thank you for your interest in contributing!
+Builds ESPHome firmware that reads JBD BMS devices over Bluetooth and publishes MQTT telemetry.
 
-## How to Contribute
+## Reports and discussion
 
-### Reporting Bugs
+Use [GitHub Issues](https://github.com/victron-venus/esphome-jbd-bms-mqtt/issues) for bugs, enhancements and design discussion. Search existing reports first. English reports and pull requests are welcome. Include the version or commit, platform, sanitized configuration, reproduction steps, expected behavior and actual behavior. Do not include credentials, personal data or private capture files. Use [SECURITY.md](SECURITY.md) for confidential vulnerability reports.
 
-1. Check existing [issues](https://github.com/victron-venus/esphome-jbd-bms-mqtt/issues) to avoid duplicates
-2. Use the bug report template
-3. Include:
-   - ESPHome version
-   - ESP32 board model
-   - JBD BMS model and firmware
-   - MQTT broker details
-   - Relevant logs
+## Proposing a change
 
-### Suggesting Features
+1. Fork or clone the repository over HTTPS and create a topic branch from the default branch.
+2. Keep the change focused and explain the problem and observable behavior in a pull request.
+3. Follow the existing language style and checked-in formatter/linter configuration. Resolve new warnings; explain any narrowly scoped exception with evidence.
+4. Add automated tests for major new functionality and regression tests for corrected bugs. Cover rejected input, unavailable dependencies and relevant failure paths as well as successful input.
+5. Update user-facing configuration/interface documentation and release notes for changed behavior. Record upgrade impact and any public vulnerability identifier when applicable.
+6. Report the exact checks run, their results and any checks that were not run. Wait for required CI and reviewer approval before merging.
 
-1. Open a feature request issue
-2. Describe the use case
-3. Explain why it would benefit others
+Contributions must be compatible with [LICENSE](LICENSE). Preserve third-party copyright and license notices; do not copy code without compatible redistribution rights.
 
-### Pull Requests
+## Local validation
 
-1. Fork the repository
-2. Create a feature branch: `git checkout -b feature/my-feature`
-3. Make your changes
-4. Test with actual hardware
-5. Validate YAML: `esphome config your-config.yaml`
-6. Commit with clear messages
-7. Push and create a Pull Request
+Run `bash scripts/ci.sh syntax` for source checks and unit tests; run `bash scripts/ci.sh compile` for the firmware compilation check. Use the firmware and dependency versions declared by the scripts. Uploading firmware is a separate hardware operation.
 
-### Code Style
+Automated tests use mocks or controlled fixtures where available. A passing unit test does not establish hardware safety. Describe any physical-device test separately, including firmware, configuration and expected rollback. Never run installation, deployment, Terraform apply or actuator commands merely to validate a documentation change.
 
-- Follow ESPHome YAML conventions
-- Use meaningful names for sensors
-- Add comments for non-obvious configurations
-- Keep configurations modular
+## Source and interfaces
 
-### Testing
+- [jbd-all-batteries.yaml](jbd-all-batteries.yaml)
+- [packages](packages)
+- [components](components)
 
-- Test with actual JBD BMS hardware
-- Verify Bluetooth connection stability
-- Check MQTT message publishing
-- Monitor ESP32 memory usage
-
-## Development Setup
-
-```bash
-# Clone
-git clone https://github.com/victron-venus/esphome-jbd-bms-mqtt.git
-cd esphome-jbd-bms-mqtt
-
-# Create secrets.yaml
-cp secrets.yaml.example secrets.yaml
-# Edit with your WiFi and MQTT credentials
-
-# Compile and upload
-esphome run jbd-bms.yaml
-```
-
-## Questions?
-
-- Open a [Discussion](https://github.com/victron-venus/esphome-jbd-bms-mqtt/discussions)
-- Ask on [Victron Community](https://community.victronenergy.com/)
-
-## License
-
-By contributing, you agree that your contributions will be licensed under the MIT License.
+See [README.md](README.md) for acquisition, configuration and usage, and [the evidence index](docs/openssf-evidence.md) for the public development-process references.

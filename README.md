@@ -463,3 +463,9 @@ on production battery topics without reviewing their consumers first.
 
 CI compiles the shared package as part of both maintained monitor configurations;
 offline regression tests cover the stale-will recovery and real-disconnect guard.
+
+## Contributing and security
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for reports, development checks and pull requests,
+[SECURITY.md](SECURITY.md) for private vulnerability reporting and deployment trust boundaries,
+and the [OpenSSF evidence index](docs/openssf-evidence.md) for assessment references and remaining verification.
