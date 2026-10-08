@@ -16,3 +16,14 @@ External check contexts retain their required status and are bound to their sour
 or converting a PR to draft disables an existing request. The metadata-only workflow
 runs from the trusted base without executing PR code. BOT_PAT remains the merger token;
 Dependabot approval uses GITHUB_TOKEN and human PR approval uses the bot's BOT_PAT.
+
+## Selective toolkit maintenance
+
+The existing vendored baseline is retained. The following behavior-preserving
+changes are backported from [toolkit ba1e3e7](https://github.com/victron-venus/venus-os-ci-toolkit/commit/ba1e3e7810783dca5ba6dec85274e2df60bdeef1):
+
+- callable workflow graph traversal helper.
+- shared immutable-SHA and gate filename constants.
+
+The repository-specific imports, type annotations, policy and workflow inputs
+remain authoritative; this is not a full generator upgrade.
