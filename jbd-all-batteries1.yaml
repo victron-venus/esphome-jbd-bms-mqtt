@@ -74,7 +74,7 @@ ota:
   encryption: {}
 
 external_components:
-  - source: github://syssi/esphome-jbd-bms@99cf7c15dbc2056295c88abc3fae7c1d83e6fb7f
+  - source: github://syssi/esphome-jbd-bms@70831773385cfa803a543d87f4ca9e65a2f8415a
     refresh: 1d
     components: [jbd_bms_ble]
 

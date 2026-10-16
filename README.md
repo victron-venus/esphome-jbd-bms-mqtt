@@ -1,10 +1,12 @@
 # ESPHome JBD BMS Monitor
 
+[![OpenSSF Best Practices](https://www.bestpractices.dev/projects/15572/badge)](https://www.bestpractices.dev/projects/15572)
+
 [![CI](https://github.com/victron-venus/esphome-jbd-bms-mqtt/actions/workflows/ci.yml/badge.svg)](https://github.com/victron-venus/esphome-jbd-bms-mqtt/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Release](https://img.shields.io/github/v/release/victron-venus/esphome-jbd-bms-mqtt)](https://github.com/victron-venus/esphome-jbd-bms-mqtt/releases)
 [![Downloads](https://img.shields.io/github/downloads/victron-venus/esphome-jbd-bms-mqtt/total)](https://github.com/victron-venus/esphome-jbd-bms-mqtt/releases)
-[![ESPHome](https://img.shields.io/badge/ESPHome-2024.x-blue.svg)](https://esphome.io/)
+[![ESPHome](https://img.shields.io/badge/ESPHome-2026.10.0b1%20CI-blue.svg)](https://esphome.io/)
 [![ESP32](https://img.shields.io/badge/ESP32-supported-green.svg)](https://www.espressif.com/en/products/socs/esp32)
 [![GitHub watchers](https://img.shields.io/github/watchers/victron-venus/esphome-jbd-bms-mqtt)](https://github.com/victron-venus/esphome-jbd-bms-mqtt/watchers)
 [![GitHub contributors](https://img.shields.io/github/contributors/victron-venus/esphome-jbd-bms-mqtt)](https://github.com/victron-venus/esphome-jbd-bms-mqtt/graphs/contributors)

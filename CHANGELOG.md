@@ -1,5 +1,19 @@
 # Changelog
 
+## 2026-10-16 source update
+
+- Pin the upstream JBD component warning fix and recent compatible BLE/parser changes.
+- Run native collector assertions with memory instrumentation and static analysis.
+- Correct the compiler badge and document governance, conduct contact and roadmap.
+
+Upgrade: retain the current private device configuration and rollback image.
+Build with the documented locked compiler; CI does not authorize flashing.
+The component pin changes upstream BLE frame handling; confirm readings and
+recovery on the intended hardware before operational acceptance.
+
+Security: no assigned runtime vulnerability identifier is addressed here.
+
+
 All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),

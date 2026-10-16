@@ -14,7 +14,7 @@
   ],
   "notes": [
     "Validation-only policy: no synthetic beta/RC artifacts or tag-triggered stable releases.",
-    "ESPHome compile matrix remains required; no flashing or hardware BLE/MQTT checks. Some external components follow upstream main.",
+    "ESPHome compile matrix remains required; no flashing or hardware BLE/MQTT checks. External JBD components are commit-pinned.",
     "Dependency review remains a PR-only comparison; callable full-source validation workflows run for nightly and candidate checks."
   ],
   "esphome_configs": [
