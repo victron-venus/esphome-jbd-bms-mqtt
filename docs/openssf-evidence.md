@@ -64,3 +64,5 @@ The [CodeQL workflow](../.github/workflows/codeql.yml) also analyzes scripts/com
 ## Current source evidence
 
 See [source versioning and component review](source-versioning.md), [firmware-access profile](firmware-access.md), [governance](../GOVERNANCE.md) and [one-year roadmap](roadmap.md). Memory instrumentation checks the maintained collector; encrypted API/OTA does not encrypt MQTT or BLE.
+
+The optional GitHub status/release helper uses the verified [GitHub CLI TLS profile](release-tls-profile.md). Native host checks require Clang/clang++ with its static analyzer, AddressSanitizer and UndefinedBehaviorSanitizer runtime libraries. These tools are available on the supported GitHub-hosted Ubuntu runner; an operator-provided runner must install them before validation. Missing tooling fails the test rather than skipping analysis.
