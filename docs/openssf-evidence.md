@@ -60,3 +60,7 @@ The live assessment, when created, is the source of truth for the badge level. U
 ## Additional source-analysis coverage
 
 The [CodeQL workflow](../.github/workflows/codeql.yml) also analyzes scripts/compile-esphome.py and the Python source validators. Existing language analyses remain enabled. Each language reports a separate analysis category; review its completed run and findings for the submitted revision. A passing GitHub Code Quality check does not substitute for these security analyses.
+
+## Current source evidence
+
+See [source versioning and component review](source-versioning.md), [firmware-access profile](firmware-access.md), [governance](../GOVERNANCE.md) and [one-year roadmap](roadmap.md). Memory instrumentation checks the maintained collector; encrypted API/OTA does not encrypt MQTT or BLE.

@@ -102,6 +102,8 @@ class TelemetryTests(unittest.TestCase):
                     "-Wall",
                     "-Wextra",
                     "-Werror",
+                    "-fsanitize=address,undefined",
+                    "-fno-omit-frame-pointer",
                     "-I",
                     str(ROOT),
                     str(cpp),
@@ -110,6 +112,13 @@ class TelemetryTests(unittest.TestCase):
                 ],
                 check=True,
                 timeout=30,
+            )
+            analyzer = shutil.which("clang++")
+            self.assertIsNotNone(analyzer, "Install clang++ for C++ static analysis")
+            subprocess.run(
+                [analyzer, "--analyze", "-std=c++17", "-Wall", "-Wextra", "-Werror",
+                 "-Xanalyzer", "-analyzer-werror", "-I", str(ROOT), str(cpp)],
+                cwd=directory, check=True, timeout=30,
             )
             subprocess.run([str(binary)], check=True, timeout=5)
 

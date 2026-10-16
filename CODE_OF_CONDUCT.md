@@ -30,9 +30,12 @@ Examples of unacceptable behavior:
 ## Enforcement
 
 Instances of abusive, harassing, or otherwise unacceptable behavior may be
-reported to the project maintainers. All complaints will be reviewed and
+reported privately to the project maintainer at **alvit.work@gmail.com**. Do not put confidential complaints in public issues. All complaints will be reviewed and
 investigated and will result in a response that is deemed necessary and
-appropriate to the circumstances.
+appropriate to the circumstances. Retaliation for a good-faith report is prohibited.
+The sole maintainer may issue warnings, remove content, restrict participation or
+exclude offenders. Use the same private contact for an appeal; there is currently
+no independent escalation reviewer.
 
 ## Attribution
 
