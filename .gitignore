@@ -6,3 +6,6 @@ __pycache__/
 
 .esphome/
 secrets.yaml
+
+# macOS Finder metadata
+.DS_Store
