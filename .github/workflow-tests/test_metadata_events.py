@@ -83,10 +83,12 @@ def context(
             "run_id": run,
             "event_name": event,
             "event": {
+                "repository": {"default_branch": "main"},
                 "action": action,
                 "changes": changes or {},
                 "pull_request": {
                     "number": 42,
+                    "base": {"ref": "main"},
                     "user": {"login": "4alvit"},
                     "draft": False,
                     "head": {"repo": {"full_name": "contributor/fork"}},
@@ -168,8 +170,8 @@ class MetadataEventsTests(unittest.TestCase):
             ("4alvit", False, "pull_request", True, True),
             ("4alvit", False, "pull_request_target", True, False),
             ("4alvit", False, "pull_request_target", False, True),
-            ("dependabot[bot]", False, "pull_request", True, True),
-            ("dependabot[bot]", False, "pull_request_target", True, False),
+            ("dependabot[bot]", False, "pull_request", True, False),
+            ("dependabot[bot]", False, "pull_request_target", True, True),
         ):
             data = context(event=event)
             pr = data["github"]["event"]["pull_request"]
@@ -181,6 +183,22 @@ class MetadataEventsTests(unittest.TestCase):
                 author=author, draft=draft, event=event, same_repo=same_repo
             ):
                 assert bool(evaluate(condition, data)) == expected
+
+
+    def test_dependabot_requires_default_branch_metadata(self):
+        condition = definition(CALLERS[0])["jobs"]["auto-approve"]["if"]
+        for event in ("pull_request", "pull_request_target"):
+            for base in ("main", "untrusted-topic"):
+                data = context(event=event)
+                pr = data["github"]["event"]["pull_request"]
+                pr["user"]["login"] = "dependabot[bot]"
+                pr["head"]["repo"]["full_name"] = data["github"]["repository"]
+                pr["base"]["ref"] = base
+                with self.subTest(event=event, base=base):
+                    self.assertEqual(
+                        bool(evaluate(condition, data)),
+                        event == "pull_request_target" and base == "main",
+                    )
 
 
 if __name__ == "__main__":
