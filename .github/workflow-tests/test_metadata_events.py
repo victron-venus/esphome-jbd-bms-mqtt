@@ -31,7 +31,7 @@ def evaluate(expression: str, context: dict[str, object]):
             )
         return repr(values if ".*." in match.group() else values[0])
 
-    expression = re.sub("\\b(?:github|inputs)(?:\\.[\\w*-]+)+", value, expression)
+    expression = re.sub("\\b(?:github|inputs|vars)(?:\\.[\\w*-]+)+", value, expression)
     expression = expression.replace("&&", " and ").replace("||", " or ")
     expression = re.sub("!(?!=)", " not ", expression)
     expression = re.sub("\\bnull\\b", "None", expression)
@@ -62,7 +62,14 @@ def evaluate(expression: str, context: dict[str, object]):
             if node.func.id == "fromJSON" and len(args) == 1:
                 return json.loads(args[0])
             if node.func.id == "contains" and len(args) == 2:
-                return args[1] in args[0]
+                items = (
+                    args[0].casefold()
+                    if isinstance(args[0], str)
+                    else [str(item).casefold() for item in args[0]]
+                )
+                return str(args[1]).casefold() in items
+            if node.func.id == "format" and args:
+                return args[0].format(*args[1:])
         message = f"Unsupported metadata expression: {expression}"
         raise AssertionError(message)
 

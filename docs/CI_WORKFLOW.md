@@ -34,7 +34,12 @@ ESPHome 2026.8.2 / PlatformIO 6.1.19 combination pinned a vulnerable version.
 The compiler lock deliberately targets Linux: the upstream prerelease's Intel
 macOS dependency constraint still selects an affected cryptography version.
 The compiler job uses custom runners only when their configured labels include
-`linux`; otherwise it uses hosted `ubuntu-latest`. The installer also rejects
+`linux` or the exact Linux x64 ARC scale-set name `victron-reserve-ci-x64`.
+ARC uses a scale-set name rather than a set of OS labels. Other custom targets
+fall back to hosted `ubuntu-latest`. The existing event trust checks still apply:
+fork PRs and non-default branch pushes stay hosted. `CI_RUNNER_MODE=github`
+remains the default; this routing compatibility change does not activate ARC or
+establish runtime readiness. The installer also rejects
 unsupported operating systems, Python implementations and Python versions
 before invoking pip. This CI choice does not recommend a
 prerelease for production devices or establish macOS/Windows compiler support.
