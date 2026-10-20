@@ -1,6 +1,8 @@
 #!/bin/bash
 # Commit and push changes using message from commit.txt
 
+set -euo pipefail
+
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 MSG_FILE="$SCRIPT_DIR/commit.txt"
 
@@ -20,13 +22,20 @@ cd "$SCRIPT_DIR"
 echo ">>> Adding all changes..."
 git add -A
 
+if git diff --cached --quiet --; then
+    echo ">>> No changes to commit."
+    exit 0
+else
+    status=$?
+    if [[ $status -ne 1 ]]; then
+        echo "Error: could not inspect staged changes" >&2
+        exit "$status"
+    fi
+fi
+
 echo ">>> Committing..."
 git commit -F "$MSG_FILE"
 
-if [[ $? -eq 0 ]]; then
-    echo ">>> Pushing..."
-    git push
-    echo ">>> Done!"
-else
-    echo ">>> Nothing to commit or commit failed"
-fi
+echo ">>> Pushing..."
+git push
+echo ">>> Done!"
