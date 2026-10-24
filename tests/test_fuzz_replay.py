@@ -20,7 +20,7 @@ class FuzzSeedReplay(unittest.TestCase):
             binary = Path(temp) / "replay"
             subprocess.run([
                 compiler, "-std=c++17", "-Wall", "-Wextra", "-Werror", "-O1",
-                "-g", "-fsanitize=address,undefined", "-fno-omit-frame-pointer",
+                "-g", "-fsanitize=address,undefined", "-fno-sanitize-recover=all", "-fno-omit-frame-pointer",
                 "-DFUZZ_REPLAY_MAIN", "-I", str(ROOT),
                 str(ROOT / "fuzz/battery_telemetry.cpp"), "-o", str(binary),
             ], check=True, timeout=60)

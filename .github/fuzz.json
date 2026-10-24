@@ -3,7 +3,7 @@
   "language": "c",
   "setup": [
     ["python3", "-c", "from pathlib import Path; Path('.fuzz-build').mkdir(exist_ok=True)"],
-    ["clang++-18", "-std=c++17", "-Wall", "-Wextra", "-Werror", "-O1", "-g", "-fsanitize=fuzzer,address,undefined", "-fno-omit-frame-pointer", "-I.", "fuzz/battery_telemetry.cpp", "-o", ".fuzz-build/battery-telemetry"]
+    ["clang++-18", "-std=c++17", "-Wall", "-Wextra", "-Werror", "-O1", "-g", "-fsanitize=fuzzer,address,undefined", "-fno-sanitize-recover=all", "-fno-omit-frame-pointer", "-I.", "fuzz/battery_telemetry.cpp", "-o", ".fuzz-build/battery-telemetry"]
   ],
   "targets": [
     {
