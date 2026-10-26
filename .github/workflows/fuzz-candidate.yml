@@ -15,5 +15,5 @@ jobs:
     if: ${{ github.event.repository.private == false && github.event_name == 'workflow_dispatch' && github.event.inputs.channel == 'rc' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch) }}
     uses: victron-venus/venus-os-ci-toolkit/.github/workflows/fuzz.yml@287699b4030f6177d5042ccceb604feb19ee1ce4
     with:
-      toolkit-ref: 287699b4030f6177d5042ccceb604feb19ee1ce4
+      toolkit-ref: f510d3b282d5fac9173b10b0ddedb9535c767ac9
       evidence-mode: candidate
