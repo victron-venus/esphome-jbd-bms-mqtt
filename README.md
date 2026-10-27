@@ -23,12 +23,17 @@
 [![Made with ESPHome](https://img.shields.io/badge/Made%20with-ESPHome-1f425f.svg)](https://esphome.io/)
 [![Victron Community](https://img.shields.io/badge/Victron-Community-blue)](https://community.victronenergy.com/)
 
-ESP32-based Bluetooth proxy for JBD BMS batteries, publishing data via MQTT to Victron Venus OS.
+ESP32-based Bluetooth monitor for JBD BMS batteries, publishing measurements via
+MQTT to Home Assistant, other MQTT consumers, or Victron Venus OS.
 
 The two current chain monitors also publish [atomic battery telemetry](docs/battery-telemetry.md)
 with boot identity, freshness and complete-round readiness for startup and MQTT reconnects.
 
-> **Note**: This project requires [dbus-mqtt-battery](https://github.com/victron-venus/dbus-mqtt-battery) running on Venus OS to integrate MQTT data into the Victron system.
+> **Victron is optional.** Use an ordinary MQTT broker and Home Assistant without
+> a Cerbo GX, Venus OS, or Victron inverter. The
+> [dbus-mqtt-battery](https://github.com/victron-venus/dbus-mqtt-battery) bridge is
+> required only for integration into Victron. See
+> [Using without Victron or Cerbo GX](#using-without-victron-or-cerbo-gx).
 
 <!-- ci-release-process:start -->
 ## CI and deployment
@@ -38,7 +43,11 @@ See [CI and deployment workflow](docs/release-workflow.md) for required checks a
 
 ## Overview
 
-This project solves the problem of integrating JBD (Jiabaida) BMS-equipped LiFePO4 batteries with Victron Energy systems. Direct Bluetooth communication from Raspberry Pi/Cerbo GX to JBD BMS proved unreliable and caused system instability (reboots due to memory leaks in BLE stack).
+This project reads JBD (Jiabaida) BMS-equipped LiFePO4 batteries over BLE and
+exposes their measurements independently of the inverter or monitoring system.
+It originated as a Victron integration: direct Bluetooth communication from a
+Raspberry Pi/Cerbo GX to JBD BMS proved unreliable and caused system instability
+(reboots due to memory leaks in the BLE stack).
 
 ### Architecture
 
@@ -48,7 +57,9 @@ flowchart LR
         BMS[(BMS 1-4)]
     end
     BMS <-.BLE.-> ESP[("ESP32\n(ESPHome)")]
-    ESP --MQTT--> VO[("Venus OS\n(Cerbo GX)")]
+    ESP --MQTT--> MQTT[(MQTT broker)]
+    MQTT --> HA[Home Assistant / other MQTT consumers]
+    MQTT -. optional .-> VO[dbus-mqtt-battery on Venus OS / Cerbo GX]
     VO --> DBUS[D-Bus Service]
 ```
 
@@ -58,6 +69,44 @@ flowchart LR
 - **Reliable connections**: ESP32's BLE stack handles multiple simultaneous connections well
 - **Low latency**: Direct BLE-to-MQTT bridge with minimal overhead
 - **OTA updates**: Update firmware wirelessly without physical access
+
+## Using without Victron or Cerbo GX
+
+**No Victron equipment is needed to monitor the batteries.** The standalone data
+path is **JBD BMS → BLE → ESP32 → Wi-Fi → MQTT broker → Home Assistant**. The
+broker can run on Home Assistant OS, a NAS, a Raspberry Pi, or another host; it
+does not need to run on a Cerbo. MQTT subscribers other than Home Assistant can
+also read the same measurements. Do not install `dbus-mqtt-battery` for this setup.
+
+1. Start with `jbd-all-batteries1.yaml` and the matching local header/package.
+   This maintained profile expects **four BMS, with four cells per BMS**. Use the
+   second profile for another four batteries; a different battery/cell count
+   requires adapting the polling and telemetry implementation.
+2. Set your BMS addresses in `ble_client`, configure private Wi-Fi/API credentials,
+   and point `mqtt.broker` at your own broker. Add broker authentication in the
+   private configuration. Keep `battery` for Chain 1 and `battery2` for Chain 2.
+3. Add Home Assistant's **MQTT integration** using the same broker. ESPHome's MQTT
+   discovery exposes per-battery voltage, current, power, SOC, temperature,
+   remaining capacity, cycle count, four individual cell voltages, and status
+   entities. Inspect the actual entity IDs in Home Assistant before building cards.
+4. Alternatively, connect Home Assistant's **ESPHome integration** to the monitor's
+   encrypted native API. Keep `api.reboot_timeout: 0s` when using MQTT without an
+   API client; it is already set in both maintained profiles. The firmware still
+   uses MQTT for its atomic telemetry, even when HA reads sensors through the API.
+
+The templates preserve existing discovery identities: Chain 1 uses `legacy` and
+Chain 2 uses `mac`. For a new installation use `mac` on every monitor; for an
+existing installation preserve its IDs and history. A green MQTT connection is
+not proof of fresh BMS data, and retained individual sensor values can be old.
+For freshness-sensitive consumers, use the non-retained `battery/telemetry` and
+`battery2/telemetry` snapshots and their readiness/age fields.
+
+Follow the [standalone Home Assistant guide](docs/standalone-home-assistant.md)
+for broker settings, discovery, cell mapping, API usage, and freshness checks.
+For a reusable battery and individual-cell display, see the companion
+[ha-jbd-bms-card](https://github.com/ha-homelab/ha-jbd-bms-card) Lovelace card.
+Map its battery and cell fields to your actual Home Assistant entity IDs; the
+card does not require Victron or a Cerbo GX.
 
 ## Screenshot
 
@@ -177,10 +226,9 @@ api_encryption_key: null
 Edit `jbd-all-batteries1.yaml` and update the MAC addresses for your BMS devices:
 
 ```yaml
-jbd_bms_ble:
-  - id: bms1
-    ble_client_id: client_bms1
-    # Your BMS MAC address (find using BLE scanner or JBD app)
+ble_client:
+  - mac_address: "AA:BB:CC:DD:EE:FF"  # Replace with your BMS address
+    id: ble_bms1
 ```
 
 To find your BMS MAC addresses:
@@ -193,9 +241,15 @@ Update the MQTT configuration in the yaml file:
 
 ```yaml
 mqtt:
-  broker: <VENUS_OS_IP>  # Your Venus OS / MQTT broker IP
+  broker: !secret mqtt_broker  # Any reachable MQTT broker, including a standalone broker
   topic_prefix: battery   # Use 'battery' for chain1, 'battery2' for chain2
 ```
+
+This is a configuration fragment: edit the existing `mqtt` block and preserve
+its `on_connect`, discovery, and `reboot_timeout` settings. Add `mqtt_broker` to
+your private `secrets.yaml`; see the
+[standalone guide](docs/standalone-home-assistant.md#configure-your-mqtt-broker)
+for authentication and the matching availability/telemetry topics.
 
 ## Compiling and Uploading
 
@@ -292,12 +346,19 @@ battery/binary_sensor/online_bms1/state      # BMS online status
 ### Aggregated Values
 ```
 battery/sensor/voltage_total/state    # Sum of all battery voltages
-battery/sensor/current_total/state    # Average current
+battery/sensor/current_total/state    # Chain power divided by chain voltage
 battery/sensor/soc_total/state        # Average SoC
-battery/sensor/capacity_total/state   # Total remaining capacity
+battery/sensor/capacity_total/state   # Filtered minimum remaining capacity (Ah)
 ```
 
-**SOC Calculation Logic**: `soc_total` calculates the average SoC of all batteries while filtering out outliers. If battery SoC values differ by more than 20%, values closest to the min/max are excluded from the average. This handles inaccurate BMS reporting — individual JBD BMS units can drift over time, but averaging across the battery chain produces reliable results.
+**SOC Calculation Logic**: `soc_total` calculates a filtered average. When the
+spread exceeds 20 percentage points, values within 0.5 points of either extreme
+are excluded; if none remain, the minimum is used. This is a display estimate,
+not a calibrated SOC or a substitute for individual battery/cell limits.
+`capacity_total` selects the minimum remaining capacity above 5 Ah, excluding
+the lowest value if it is less than 70% of the next. It is not the sum of
+series-connected batteries; if no capacity exceeds 5 Ah, the existing template
+skips that update. Use individual readings when assessing low-capacity batteries.
 
 ## Troubleshooting
 
@@ -363,7 +424,8 @@ esphome/
 
 ## Integration with Venus OS
 
-After ESP32 is running, install the MQTT-to-D-Bus bridge on Venus OS:
+For the optional Victron integration, install the MQTT-to-D-Bus bridge on Venus
+OS after the ESP32 is running. Skip this section for standalone Home Assistant:
 
 ```bash
 # On Venus OS (Cerbo GX)
