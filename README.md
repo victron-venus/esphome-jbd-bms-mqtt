@@ -103,6 +103,10 @@ For freshness-sensitive consumers, use the non-retained `battery/telemetry` and
 
 Follow the [standalone Home Assistant guide](docs/standalone-home-assistant.md)
 for broker settings, discovery, cell mapping, API usage, and freshness checks.
+For a reusable battery and individual-cell display, see the companion
+[ha-jbd-bms-card](https://github.com/ha-homelab/ha-jbd-bms-card) Lovelace card.
+Map its battery and cell fields to your actual Home Assistant entity IDs; the
+card does not require Victron or a Cerbo GX.
 
 ## Screenshot
 

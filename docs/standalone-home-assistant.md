@@ -154,6 +154,21 @@ unknown, never as 0 V or an empty battery. The `charging_bmsN` and
 `discharging_bmsN` binary sensors report MOS permissions, not proof that current
 is flowing in either direction.
 
+## Optional battery and cell card
+
+The companion [ha-jbd-bms-card](https://github.com/ha-homelab/ha-jbd-bms-card)
+provides a reusable Lovelace display for battery summaries and individual cell
+voltages. Follow its installation and configuration instructions, then map each
+battery to the actual SOC, voltage, current, power, temperature, and cell entity
+IDs in your Home Assistant registry. It can use your standalone MQTT/API sensor
+entities without a Victron inverter, Venus OS, or Cerbo GX.
+
+Check each entity's device and MQTT state topic before assigning it to a chain;
+renamed entities and historical discovery collisions can leave misleading entity
+names. Preserve those IDs to retain history and give the card readable battery
+labels. The card's entity mapping does not change firmware topics or discovery
+identities, and the freshness requirements below still apply to its source data.
+
 ## Alternative: Home Assistant's encrypted ESPHome API
 
 The maintained profiles also expose the encrypted native API. Add the
