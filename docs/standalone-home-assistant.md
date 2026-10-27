@@ -42,8 +42,9 @@ revision 3.1 or newer; verify your board and compiler before building.
 
 ## Configure your MQTT broker
 
-Edit the existing `mqtt` block in your **private copy**. For Chain 1 it should
-retain the polling reconnect hook and include your broker settings:
+Edit the existing `mqtt` block in your **private copy**. For an existing Chain 1
+installation, preserve its discovery identity and polling reconnect hook while
+adding your broker settings:
 
 ```yaml
 mqtt:
@@ -55,12 +56,23 @@ mqtt:
   reboot_timeout: 0s
   discovery: true
   discovery_prefix: homeassistant
-  # New installations: use mac on every monitor.
-  # Existing Chain 1 installations: retain legacy to preserve HA history.
-  discovery_unique_id_generator: mac
+  # Preserve the repository's existing Chain 1 Home Assistant identity.
+  discovery_unique_id_generator: legacy
   on_connect:
     - script.execute: poll_all_bms
 ```
+
+For a **new installation with no existing Home Assistant entities or history**,
+use MAC-based discovery IDs on every monitor instead. Change this one setting
+inside the existing `mqtt` block:
+
+```yaml
+# New installation only; this is a fragment of the mqtt block above.
+discovery_unique_id_generator: mac
+```
+
+The maintained Chain 2 profile already uses `mac`; preserve that setting for
+existing Chain 2 installations as well.
 
 Add `mqtt_broker`, `mqtt_username`, and `mqtt_password` to `secrets.yaml`; they
 are additional keys, not replacements for the Wi-Fi/API secrets. Configure a
