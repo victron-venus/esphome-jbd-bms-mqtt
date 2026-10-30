@@ -1,5 +1,9 @@
 # Firmware management access
 
+For browser-based serial provisioning without a local compiler, follow the
+[browser installation guide](browser-install.md). It preserves the encrypted
+API/OTA profile and uses your own private factory image.
+
 The three repository profiles require a private native API key and encrypted
 native OTA. They no longer enable the HTTP web server or captive portal: those
 interfaces exposed controls and a separate plaintext firmware upload route.

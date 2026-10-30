@@ -26,6 +26,15 @@
 ESP32-based Bluetooth monitor for JBD BMS batteries, publishing measurements via
 MQTT to Home Assistant, other MQTT consumers, or Victron Venus OS.
 
+## Install from your browser
+
+Use **[ESPHome Web](https://web.esphome.io/)** with a factory image built by
+ESPHome Device Builder on Home Assistant or another server. No Python,
+Homebrew or PlatformIO is needed on the USB-connected computer.
+[Follow the browser installation guide](docs/browser-install.md) to configure
+your own batteries and credentials, build once, and flash over USB. The current
+profiles require a personalised image; CI test firmware is not a public installer.
+
 The two current chain monitors also publish [atomic battery telemetry](docs/battery-telemetry.md)
 with boot identity, freshness and complete-round readiness for startup and MQTT reconnects.
 
@@ -128,7 +137,7 @@ card does not require Victron or a Cerbo GX.
 | `jbd-all-batteries.yaml` | Legacy 8-BMS config (archive) | BMS 1-8 |
 | `secrets.example.yaml` | Incomplete template for local private credentials | - |
 
-## Installation on macOS
+## Advanced: local builds on macOS
 
 ### Prerequisites
 
