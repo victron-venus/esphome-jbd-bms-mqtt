@@ -6,13 +6,17 @@
 import argparse
 import copy
 import json
+import os
 import re
-import shutil
+import tempfile
+from contextlib import contextmanager
 from pathlib import Path
 
 import yaml
 
 ROOT = Path(__file__).resolve().parents[1]
+TELEMETRY_HEADER = "components/series_telemetry.h"
+PROJECT_FILENAMES = frozenset(("series.yaml", "secrets.example.yaml", "topology.json", "series_telemetry.h"))
 
 
 class Secret(str):
@@ -47,12 +51,30 @@ def replace_strings(value, old, new):
 
 def parse_cells(value):
     """Accept one to four explicit member cell counts; never silently truncate."""
-    if not re.fullmatch(r"[0-9]+(?:,[0-9]+){0,3}", value):
+    if not re.fullmatch(r"\d+(?:,\d+){0,3}", value, flags=re.ASCII):
         raise argparse.ArgumentTypeError("Use 1–4 comma-separated cell counts, for example 4,4,4,4")
     counts = [int(count) for count in value.split(",")]
     if any(count < 1 or count > 32 for count in counts):
         raise argparse.ArgumentTypeError("Each member must contain 1–32 cells")
     return counts
+
+
+def build_member_sensor(prototype, index, cell_count):
+    """Replace one member's entire cell inventory without mutating an iteration."""
+    member = replace_strings(copy.deepcopy(prototype), "bms1", f"bms{index + 1}")
+    sensor = {key: value for key, value in member.items() if not key.startswith("cell_voltage_")}
+    for item in sensor.values():
+        if isinstance(item, dict) and "on_raw_value" in item:
+            callback = item["on_raw_value"]["then"][0]["lambda"].splitlines()[0]
+            item["on_raw_value"]["then"][0]["lambda"] = callback.replace(".record(0,", f".record({index},")
+    for cell in range(cell_count):
+        sensor[f"cell_voltage_{cell + 1}"] = {
+            "name": f"voltage_cell{cell + 1}_bms{index + 1}",
+            "on_raw_value": {"then": [{"lambda": f"series_telemetry::snapshot().record({index}, "
+              f"series_telemetry::cell_field({cell}), x, millis());"}]}}
+    sensor["cell_count"] = {"name": f"cell_count_bms{index + 1}", "on_raw_value": {"then": [{
+        "lambda": f"series_telemetry::snapshot().record({index}, series_telemetry::CELL_COUNT, x, millis());"}]}}
+    return sensor
 
 
 def build_config(name, topic_prefix, counts):
@@ -61,7 +83,7 @@ def build_config(name, topic_prefix, counts):
     config = replace_strings(config, "battery_telemetry::", "series_telemetry::")
     config["esphome"]["name"] = name
     config["esphome"]["friendly_name"] = name.replace("-", " ").title()
-    config["esphome"]["includes"] = ["components/series_telemetry.h"]
+    config["esphome"]["includes"] = [TELEMETRY_HEADER]
     config["esphome"]["on_boot"]["then"] = [
         {"lambda": "series_telemetry::snapshot().configure({" + ", ".join(map(str, counts))
          + "}); series_telemetry::snapshot().begin_session(random_uint32(), random_uint32());"},
@@ -83,22 +105,7 @@ def build_config(name, topic_prefix, counts):
     prototype = next(sensor for sensor in config["sensor"] if sensor["platform"] == "jbd_bms_ble")
     sensors = [sensor for sensor in config["sensor"] if sensor["platform"] not in ("jbd_bms_ble", "template")]
     for index, cell_count in enumerate(counts):
-        sensor = replace_strings(copy.deepcopy(prototype), "bms1", f"bms{index + 1}")
-        for key in list(sensor):
-            if key.startswith("cell_voltage_"):
-                del sensor[key]
-        for key, item in sensor.items():
-            if isinstance(item, dict) and "on_raw_value" in item:
-                callback = item["on_raw_value"]["then"][0]["lambda"].splitlines()[0]
-                item["on_raw_value"]["then"][0]["lambda"] = callback.replace(".record(0,", f".record({index},")
-        for cell in range(cell_count):
-            sensor[f"cell_voltage_{cell + 1}"] = {
-                "name": f"voltage_cell{cell + 1}_bms{index + 1}",
-                "on_raw_value": {"then": [{"lambda": f"series_telemetry::snapshot().record({index}, "
-                  f"series_telemetry::cell_field({cell}), x, millis());"}]}}
-        sensor["cell_count"] = {"name": f"cell_count_bms{index + 1}", "on_raw_value": {"then": [{
-            "lambda": f"series_telemetry::snapshot().record({index}, series_telemetry::CELL_COUNT, x, millis());"}]}}
-        sensors.append(sensor)
+        sensors.append(build_member_sensor(prototype, index, cell_count))
     for metric, unit, decimals in (("voltage", "V", 2), ("power", "W", 1), ("current", "A", 2),
                                    ("soc", "%", 0), ("capacity", "Ah", 1)):
         sensors.append({"platform": "template", "name": f"{metric}_total", "id": f"series_{metric}",
@@ -138,36 +145,110 @@ def build_config(name, topic_prefix, counts):
     return config
 
 
+def output_location(value):
+    """Confine CLI destinations to home/temporary roots without resolving user links."""
+    path = value.expanduser().absolute()
+    if ".." in path.parts:
+        raise ValueError("output cannot contain parent-directory traversal")
+    roots = (Path.home(), Path(tempfile.gettempdir()), Path("/tmp"))
+    for root in roots:
+        canonical = root.resolve(strict=True)
+        for alias in (root.absolute(), canonical):
+            if not path.is_relative_to(alias):
+                continue
+            relative = path.relative_to(alias)
+            output = canonical / relative
+            if not relative.parts or output.is_relative_to(ROOT):
+                raise ValueError("output must be a new directory outside the source checkout")
+            return canonical, relative.parts
+    raise ValueError("output must be inside your home directory or an operating-system temporary directory")
+
+
+@contextmanager
+def private_output_directory(value):
+    """Pin each directory inode; reject symlinks and an already-existing final entry."""
+    if os.name != "posix" or not hasattr(os, "O_NOFOLLOW"):
+        raise ValueError("private output creation requires POSIX directory-descriptor support (Linux/macOS)")
+    root, parts = output_location(value)
+    flags = os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW
+    directory = os.open(root, flags)
+    try:
+        for index, part in enumerate(parts):
+            try:
+                os.mkdir(part, mode=0o700, dir_fd=directory)
+            except FileExistsError:
+                if index == len(parts) - 1:
+                    raise FileExistsError("output directory already exists; no files were overwritten") from None
+            child = os.open(part, flags, dir_fd=directory)
+            os.close(directory)
+            directory = child
+        yield root.joinpath(*parts), directory
+    finally:
+        os.close(directory)
+
+
+def write_private_text(directory, filename, text):
+    """Create one fixed project filename exclusively within the pinned directory."""
+    if filename not in PROJECT_FILENAMES:
+        raise ValueError("only fixed generated project filenames may be written")
+    descriptor = os.open(filename, os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW,
+                         mode=0o600, dir_fd=directory)
+    with os.fdopen(descriptor, "w", encoding="utf-8") as stream:
+        stream.write(text)
+
+
+def project_texts(args, config):
+    """Render all content before creating any private output directory."""
+    secrets = yaml.safe_load((ROOT / "secrets.example.yaml").read_text())
+    secrets.update(mqtt_broker="mqtt.example.invalid", mqtt_username="replace-me", mqtt_password="replace-me")
+    for index in range(len(args.cells)):
+        secrets[f"bms{index + 1}_mac"] = f"02:00:00:00:00:{index + 1:02X}"
+    return {
+        "series.yaml": "# Generated private series configuration; validate before compiling/flashing.\n"
+                       + yaml.dump(config, Dumper=Dumper, sort_keys=False, width=110),
+        "secrets.example.yaml": yaml.safe_dump(secrets, sort_keys=False),
+        "topology.json": json.dumps({"name": args.name, "topic_prefix": args.topic_prefix,
+            "connection": "series", "member_cell_counts": args.cells,
+            "telemetry_schema": 1 if all(c == 4 for c in args.cells) else 2,
+            "soc_policy": "minimum_member", "capacity_policy": "minimum_remaining_ah",
+            "current_policy": "voltage_weighted_bms_estimate"}, indent=2) + "\n",
+    }
+
+
+def write_project(destination, contents):
+    """Write fixed project files without following or overwriting directory entries."""
+    header = (ROOT / TELEMETRY_HEADER).read_text(encoding="utf-8")
+    with private_output_directory(destination) as (output, directory):
+        os.mkdir("components", mode=0o700, dir_fd=directory)
+        components = os.open("components", os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW, dir_fd=directory)
+        try:
+            write_private_text(components, "series_telemetry.h", header)
+        finally:
+            os.close(components)
+        for filename, text in contents.items():
+            write_private_text(directory, filename, text)
+        return output
+
+
 def main():
     """Write a separate project, refusing existing paths or repository output."""
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--name", required=True, help="Unique ESPHome name, lowercase letters/digits/hyphens")
     parser.add_argument("--topic-prefix", required=True, help="Unique MQTT prefix for this collector")
     parser.add_argument("--cells", required=True, type=parse_cells, help="Physical member cell counts, e.g. 4,4,4,4 or 16")
-    parser.add_argument("--output", required=True, type=Path, help="New private project directory outside this checkout")
+    parser.add_argument("--output", required=True, type=Path,
+                        help="New private project directory under home or OS temporary storage, outside this checkout")
     args = parser.parse_args()
     if not re.fullmatch(r"[a-z][a-z0-9-]{0,30}", args.name):
         parser.error("name must start with a lowercase letter and contain at most 31 letters/digits/hyphens")
     if not re.fullmatch(r"[A-Za-z0-9_-]+(?:/[A-Za-z0-9_-]+)*", args.topic_prefix):
         parser.error("topic-prefix must contain nonempty letters/digits/underscore/hyphen segments")
-    output = args.output.expanduser().resolve()
-    if output.exists() or output.is_relative_to(ROOT):
-        parser.error("output must be a new directory outside the source checkout")
     config = build_config(args.name, args.topic_prefix, args.cells)
-    output.mkdir(parents=True, mode=0o700)
-    (output / "components").mkdir()
-    shutil.copyfile(ROOT / "components/series_telemetry.h", output / "components/series_telemetry.h")
-    (output / "series.yaml").write_text("# Generated private series configuration; validate before compiling/flashing.\n"
-                                        + yaml.dump(config, Dumper=Dumper, sort_keys=False, width=110), encoding="utf-8")
-    secrets = yaml.safe_load((ROOT / "secrets.example.yaml").read_text())
-    secrets.update(mqtt_broker="mqtt.example.invalid", mqtt_username="replace-me", mqtt_password="replace-me")
-    for index in range(len(args.cells)):
-        secrets[f"bms{index + 1}_mac"] = f"02:00:00:00:00:{index + 1:02X}"
-    (output / "secrets.example.yaml").write_text(yaml.safe_dump(secrets, sort_keys=False), encoding="utf-8")
-    (output / "topology.json").write_text(json.dumps({"name": args.name, "topic_prefix": args.topic_prefix,
-        "connection": "series", "member_cell_counts": args.cells, "telemetry_schema": 1 if all(c == 4 for c in args.cells) else 2,
-        "soc_policy": "minimum_member", "capacity_policy": "minimum_remaining_ah",
-        "current_policy": "voltage_weighted_bms_estimate"}, indent=2) + "\n", encoding="utf-8")
+    contents = project_texts(args, config)
+    try:
+        output = write_project(args.output, contents)
+    except (OSError, ValueError) as error:
+        parser.error(str(error))
     print(f"Created {output}/series.yaml; fill secrets.yaml, then run esphome config and esphome compile.")
     if any(count != 4 for count in args.cells):
         print("Schema 2: HA/standalone only; current dbus-mqtt-battery schema-1 decoder is incompatible.")

@@ -56,8 +56,13 @@ from `4,4,4,4`, even though both contain 16 cells overall. Unequal counts such a
 `4,8` can be represented for observation, but do not establish electrical or
 charging compatibility between those physical batteries.
 
-The generator refuses existing output directories and paths inside this source
-checkout. It writes `series.yaml`, `components/series_telemetry.h`,
+The generator runs on Linux/macOS (POSIX directory-descriptor support). Output
+must be inside your home directory or operating-system temporary storage,
+including `/tmp`, and outside this source checkout. It refuses existing output
+directories, parent traversal (`..`) and symlink components below those roots.
+It creates private directories/files through pinned directory descriptors, so a
+path replaced by a symlink cannot redirect a write or overwrite an existing file.
+It writes `series.yaml`, `components/series_telemetry.h`,
 `secrets.example.yaml` and `topology.json`. It does not read private secrets,
 connect to the broker, flash hardware or update an existing monitor.
 

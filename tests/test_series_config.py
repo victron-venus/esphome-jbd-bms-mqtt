@@ -2,7 +2,9 @@
 
 import importlib.util
 import json
+import os
 import shutil
+import stat
 import subprocess
 import sys
 import tempfile
@@ -86,6 +88,64 @@ class SeriesConfigTests(unittest.TestCase):
                 result = subprocess.run(command, capture_output=True, check=False)
                 self.assertNotEqual(result.returncode, 0)
                 self.assertFalse(output.exists())
+
+    def test_output_boundary_rejects_traversal_checkout_and_unrelated_roots(self):
+        for destination in (Path(tempfile.gettempdir()) / "new" / ".." / "escape",
+                            ROOT / "generated-project", Path("/etc/jbd-generated-project"),
+                            Path(str(Path.home()) + "-neighbor") / "jbd-generated-project"):
+            with self.subTest(destination=destination), self.assertRaises(ValueError):
+                GENERATOR.output_location(destination)
+        home_output = Path.home() / ".config" / "jbd-series" / "test-series"
+        root, parts = GENERATOR.output_location(home_output)
+        self.assertEqual(root, Path.home().resolve())
+        self.assertEqual(parts, (".config", "jbd-series", "test-series"))
+
+    def test_parent_and_final_symlinks_cannot_redirect_project_creation(self):
+        with tempfile.TemporaryDirectory() as directory:
+            base = Path(directory)
+            target = base / "untouched"
+            target.mkdir()
+            (target / "sentinel").write_text("keep")
+            link = base / "link"
+            link.symlink_to(target, target_is_directory=True)
+            for destination in (link, link / "project"):
+                with self.subTest(destination=destination), self.assertRaises(OSError):
+                    GENERATOR.write_project(destination, {"series.yaml": "never written"})
+                self.assertEqual(list(target.iterdir()), [target / "sentinel"])
+                self.assertEqual((target / "sentinel").read_text(), "keep")
+            dangling = base / "dangling"
+            dangling.symlink_to(base / "missing", target_is_directory=True)
+            with self.assertRaises(FileExistsError):
+                GENERATOR.write_project(dangling, {"series.yaml": "never written"})
+            self.assertFalse((base / "missing").exists())
+
+    def test_pinned_directory_exclusive_files_and_private_permissions(self):
+        with tempfile.TemporaryDirectory() as directory:
+            base = Path(directory)
+            output = base / "private-parent" / "project"
+            moved, target = base / "moved", base / "untouched"
+            target.mkdir()
+            with GENERATOR.private_output_directory(output) as (_, descriptor):
+                self.assertEqual(stat.S_IMODE(os.fstat(descriptor).st_mode), 0o700)
+                output.rename(moved)
+                output.symlink_to(target, target_is_directory=True)
+                GENERATOR.write_private_text(descriptor, "series.yaml", "private")
+                with self.assertRaises(FileExistsError):
+                    GENERATOR.write_private_text(descriptor, "series.yaml", "replacement")
+                with self.assertRaises(ValueError):
+                    GENERATOR.write_private_text(descriptor, "../escaped.yaml", "escape")
+                (moved / "topology.json").symlink_to(target / "outside.json")
+                with self.assertRaises(FileExistsError):
+                    GENERATOR.write_private_text(descriptor, "topology.json", "outside")
+            self.assertEqual((moved / "series.yaml").read_text(), "private")
+            self.assertEqual(stat.S_IMODE((moved / "series.yaml").stat().st_mode), 0o600)
+            self.assertEqual(stat.S_IMODE((base / "private-parent").stat().st_mode), 0o700)
+            self.assertEqual(list(target.iterdir()), [])
+
+    def test_cell_counts_remain_ascii_only(self):
+        for value in ("٤", "４", "4,٤"):
+            with self.subTest(value=value), self.assertRaises(GENERATOR.argparse.ArgumentTypeError):
+                GENERATOR.parse_cells(value)
 
     def test_actual_collector_under_sanitizers(self):
         source = r'''
