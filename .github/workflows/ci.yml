@@ -36,3 +36,7 @@ jobs:
         env:
           CONFIG: ${{ matrix.config }}
         run: bash scripts/ci.sh compile "$CONFIG"
+
+      - name: Validate generated topology matrix and compile the maximum-cell profile
+        if: matrix.config == 'jbd-all-batteries1.yaml'
+        run: python scripts/check-generated-series.py --compile

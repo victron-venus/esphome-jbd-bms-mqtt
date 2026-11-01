@@ -21,10 +21,12 @@ and records four cell voltages per BMS: two monitors expose eight batteries and
 32 individual cells. The repository's `jbd-all-batteries.yaml` is an archived
 eight-BMS profile, not the recommended starting point.
 
-The current polling, aggregate sensors, and C++ telemetry collector require all
-four BMS and their four cells. A single BMS or a different cell count is not a
-configuration switch: adapt those parts together before using a different
-layout. The aggregate voltage/current calculations assume a series chain;
+The two maintained profiles require all four BMS and their four cells. For one,
+two, three or four physical members with an explicit cell inventory, use the
+[private series configuration generator and commissioning runbook](virtual-series-battery.md).
+It generates polling, sensors and evidence collection together; a card setting
+alone does not change the collector. Non-four-cell profiles use schema 2 and
+are not supported by the current Victron bridge. The aggregate voltage/current calculations assume a series chain;
 parallel or unrelated batteries need different aggregate calculations. Individual
 BMS measurements are still the source for each battery's own display.
 
