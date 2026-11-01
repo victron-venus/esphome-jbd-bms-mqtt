@@ -13,7 +13,7 @@ permissions:
 jobs:
   fuzz:
     if: ${{ github.event.repository.private == false && github.event_name == 'workflow_dispatch' && github.event.inputs.channel == 'rc' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch) }}
-    uses: victron-venus/venus-os-ci-toolkit/.github/workflows/fuzz.yml@6f0bf114a398f9c2b7e5407042c3828a8cc28b40 # main
+    uses: victron-venus/venus-os-ci-toolkit/.github/workflows/fuzz.yml@f77820983e4279471224b8443980f55448183872 # main
     with:
-      toolkit-ref: 6f0bf114a398f9c2b7e5407042c3828a8cc28b40
+      toolkit-ref: f77820983e4279471224b8443980f55448183872
       evidence-mode: candidate
