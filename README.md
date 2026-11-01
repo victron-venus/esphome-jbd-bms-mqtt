@@ -443,15 +443,33 @@ esphome/
 ## Integration with Venus OS
 
 For the optional Victron integration, install the MQTT-to-D-Bus bridge on Venus
-OS after the ESP32 is running. Skip this section for standalone Home Assistant:
+OS after the ESP32 is running. Follow the
+[bridge installation instructions](https://github.com/victron-venus/dbus-mqtt-battery#option-2-cli-install-for-gui-v2-users)
+to obtain the package and configure its SetupHelper options. The package uses
+`/data/dbus-mqtt-battery/` and requires SetupHelper. After those prerequisites,
+its installation entry point on the Cerbo is:
 
 ```bash
-# On Venus OS (Cerbo GX)
-cd /data/apps/dbus-mqtt-battery
-./install.sh <VENUS_OS_IP>  # MQTT broker IP
+/data/dbus-mqtt-battery/setup install
 ```
 
-See the [dbus-mqtt-battery](https://github.com/victron-venus/dbus-mqtt-battery) README for full Venus OS integration instructions.
+Set the MQTT broker through `/data/setupOptions/dbus-mqtt-battery/broker` before
+installation; the setup command does not accept a broker-IP argument. Preserve
+existing chain counts, BMS indexing, broker settings and device identities when
+updating an established installation. See the
+[bridge README](https://github.com/victron-venus/dbus-mqtt-battery) for the complete
+backup, service-stop, installation and restart procedure.
+
+The maintained `jbd-all-batteries1.yaml` and `jbd-all-batteries2.yaml` profiles
+continue to publish the existing four-member, four-cell **schema-1** contract.
+The Home Assistant card reads HA entities; updating it leaves ESP32 firmware,
+Cerbo services and their configuration in place.
+
+New generated profiles with 1–4 four-cell members also use schema 1, with the
+bridge configured to match their member count, BMS IDs and MQTT prefix. Profiles
+with any other cell count use **schema 2**, which the current bridge does not
+support. Follow the [Victron compatibility boundary](docs/virtual-series-battery.md#mqtt-contracts-and-victron-boundary)
+before commissioning a new topology. Standalone Home Assistant needs no bridge.
 
 ## Related Projects
 
