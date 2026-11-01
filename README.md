@@ -99,7 +99,8 @@ also read the same measurements. Do not install `dbus-mqtt-battery` for this set
    This maintained profile expects **four BMS, with four cells per BMS**. Use the
    second profile for another four batteries. For one, two, three or a different
    cell inventory, use the [private series configuration generator](docs/virtual-series-battery.md#generate-a-private-configuration).
-   Non-four-cell generated profiles require the documented schema-2/HA route.
+   Non-four-cell generated profiles use schema 2; Home Assistant reads their
+   discovered entities without a Victron bridge.
 2. Set your BMS addresses in `ble_client`, configure private Wi-Fi/API credentials,
    and point `mqtt.broker` at your own broker. Add broker authentication in the
    private configuration. Keep `battery` for Chain 1 and `battery2` for Chain 2.
@@ -467,8 +468,13 @@ Cerbo services and their configuration in place.
 
 New generated profiles with 1–4 four-cell members also use schema 1, with the
 bridge configured to match their member count, BMS IDs and MQTT prefix. Profiles
-with any other cell count use **schema 2**, which the current bridge does not
-support. Follow the [Victron compatibility boundary](docs/virtual-series-battery.md#mqtt-contracts-and-victron-boundary)
+with any other cell count use **schema 2**. Cerbo support requires the
+**dbus-mqtt-battery 2.8.0 beta extension** and an explicitly configured topology.
+Select and pin a `v2.8.0-beta.*` prerelease from the
+[bridge releases](https://github.com/victron-venus/dbus-mqtt-battery/releases).
+Older releases and the default schema-1 configuration do not accept schema 2. Start with the
+[bridge topology guide](https://github.com/victron-venus/dbus-mqtt-battery/blob/9ff889101350f8a148842dfc5091c096f993e95a/docs/flexible-topology.md)
+and follow the [Victron compatibility boundary](docs/virtual-series-battery.md#mqtt-contracts-and-victron-boundary)
 before commissioning a new topology. Standalone Home Assistant needs no bridge.
 
 ## Related Projects
