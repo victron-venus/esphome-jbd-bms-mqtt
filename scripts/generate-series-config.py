@@ -16,7 +16,8 @@ import yaml
 
 ROOT = Path(__file__).resolve().parents[1]
 TELEMETRY_HEADER = "components/series_telemetry.h"
-PROJECT_FILENAMES = frozenset(("series.yaml", "secrets.example.yaml", "topology.json", "series_telemetry.h"))
+SECRETS_EXAMPLE = "secrets.example.yaml"
+PROJECT_FILENAMES = frozenset(("series.yaml", SECRETS_EXAMPLE, "topology.json", "series_telemetry.h"))
 
 
 class Secret(str):
@@ -150,7 +151,7 @@ def output_location(value):
     path = value.expanduser().absolute()
     if ".." in path.parts:
         raise ValueError("output cannot contain parent-directory traversal")
-    roots = (Path.home(), Path(tempfile.gettempdir()), Path("/tmp"))
+    roots = (Path.home(), Path(tempfile.gettempdir()))
     for root in roots:
         canonical = root.resolve(strict=True)
         for alias in (root.absolute(), canonical):
@@ -199,14 +200,14 @@ def write_private_text(directory, filename, text):
 
 def project_texts(args, config):
     """Render all content before creating any private output directory."""
-    secrets = yaml.safe_load((ROOT / "secrets.example.yaml").read_text())
+    secrets = yaml.safe_load((ROOT / SECRETS_EXAMPLE).read_text())
     secrets.update(mqtt_broker="mqtt.example.invalid", mqtt_username="replace-me", mqtt_password="replace-me")
     for index in range(len(args.cells)):
         secrets[f"bms{index + 1}_mac"] = f"02:00:00:00:00:{index + 1:02X}"
     return {
         "series.yaml": "# Generated private series configuration; validate before compiling/flashing.\n"
                        + yaml.dump(config, Dumper=Dumper, sort_keys=False, width=110),
-        "secrets.example.yaml": yaml.safe_dump(secrets, sort_keys=False),
+        SECRETS_EXAMPLE: yaml.safe_dump(secrets, sort_keys=False),
         "topology.json": json.dumps({"name": args.name, "topic_prefix": args.topic_prefix,
             "connection": "series", "member_cell_counts": args.cells,
             "telemetry_schema": 1 if all(c == 4 for c in args.cells) else 2,

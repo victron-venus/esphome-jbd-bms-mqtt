@@ -10,6 +10,7 @@ import sys
 import tempfile
 import unittest
 from pathlib import Path
+from unittest import mock
 
 import yaml
 
@@ -118,6 +119,19 @@ class SeriesConfigTests(unittest.TestCase):
             with self.assertRaises(FileExistsError):
                 GENERATOR.write_project(dangling, {"series.yaml": "never written"})
             self.assertFalse((base / "missing").exists())
+
+    def test_only_home_and_selected_temporary_root_are_allowed(self):
+        with tempfile.TemporaryDirectory() as directory:
+            base = Path(directory)
+            home, selected = base / "home", base / "selected-temp"
+            home.mkdir()
+            selected.mkdir()
+            with mock.patch.object(GENERATOR.Path, "home", return_value=home), \
+                    mock.patch.object(GENERATOR.tempfile, "gettempdir", return_value=str(selected)):
+                self.assertEqual(GENERATOR.output_location(home / "project"), (home.resolve(), ("project",)))
+                self.assertEqual(GENERATOR.output_location(selected / "project"), (selected.resolve(), ("project",)))
+                with self.assertRaises(ValueError):
+                    GENERATOR.output_location(base / "unselected-temp" / "project")
 
     def test_pinned_directory_exclusive_files_and_private_permissions(self):
         with tempfile.TemporaryDirectory() as directory:

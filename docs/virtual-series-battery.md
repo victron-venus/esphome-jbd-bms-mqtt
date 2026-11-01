@@ -57,8 +57,9 @@ from `4,4,4,4`, even though both contain 16 cells overall. Unequal counts such a
 charging compatibility between those physical batteries.
 
 The generator runs on Linux/macOS (POSIX directory-descriptor support). Output
-must be inside your home directory or operating-system temporary storage,
-including `/tmp`, and outside this source checkout. It refuses existing output
+must be inside your home directory or the temporary directory selected by
+Python's `tempfile.gettempdir()`, and outside this source checkout. No additional
+public temporary-directory aliases are accepted. It refuses existing output
 directories, parent traversal (`..`) and symlink components below those roots.
 It creates private directories/files through pinned directory descriptors, so a
 path replaced by a symlink cannot redirect a write or overwrite an existing file.
