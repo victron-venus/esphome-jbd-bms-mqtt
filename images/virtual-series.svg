@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 640" role="img" aria-labelledby="title desc">
+  <title id="title">One virtual series battery from physical JBD batteries</title>
+  <desc id="desc">Four physical batteries connected in series, each showing four cells, send BLE measurements to an ESP32. It publishes one virtual battery and per-member readings to Home Assistant or an optional Victron bridge.</desc>
+  <defs>
+    <linearGradient id="bg" x2="1" y2="1"><stop stop-color="#101d37"/><stop offset="1" stop-color="#182d45"/></linearGradient>
+    <linearGradient id="cell" x2="0" y2="1"><stop stop-color="#47dfb6"/><stop offset="1" stop-color="#25b8cb"/></linearGradient>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 10 5 0 10Z" fill="#83a5d6"/></marker>
+  </defs>
+  <rect width="1200" height="640" rx="24" fill="url(#bg)"/>
+  <g font-family="system-ui, sans-serif">
+    <text x="48" y="56" fill="#68e4c6" font-size="15" letter-spacing="3">JBD · ESPHOME · MQTT</text>
+    <text x="48" y="101" fill="#f1f7ff" font-size="34" font-weight="700">Physical batteries. One virtual series battery.</text>
+    <text x="48" y="134" fill="#adc2dc" font-size="18">The hierarchy is explicit: cells → physical BMS members → one complete string.</text>
+    <g stroke="#83a5d6" stroke-width="4" fill="none"><path d="M274 255H325"/><path d="M549 255H600"/><path d="M824 255H875"/></g>
+    <g fill="#1f3652" stroke="#496888" stroke-width="2">
+      <rect x="48" y="180" width="226" height="158" rx="16"/><rect x="323" y="180" width="226" height="158" rx="16"/>
+      <rect x="598" y="180" width="226" height="158" rx="16"/><rect x="873" y="180" width="278" height="158" rx="16"/>
+    </g>
+    <g fill="#eff6ff" font-size="18" font-weight="600"><text x="70" y="212">Physical battery 1</text><text x="345" y="212">Physical battery 2</text><text x="620" y="212">Physical battery 3</text><text x="895" y="212">Physical battery 4</text></g>
+    <g fill="url(#cell)">
+      <rect x="70" y="233" width="36" height="54" rx="6"/><rect x="117" y="233" width="36" height="54" rx="6"/><rect x="164" y="233" width="36" height="54" rx="6"/><rect x="211" y="233" width="36" height="54" rx="6"/>
+      <rect x="345" y="233" width="36" height="54" rx="6"/><rect x="392" y="233" width="36" height="54" rx="6"/><rect x="439" y="233" width="36" height="54" rx="6"/><rect x="486" y="233" width="36" height="54" rx="6"/>
+      <rect x="620" y="233" width="36" height="54" rx="6"/><rect x="667" y="233" width="36" height="54" rx="6"/><rect x="714" y="233" width="36" height="54" rx="6"/><rect x="761" y="233" width="36" height="54" rx="6"/>
+      <rect x="895" y="233" width="46" height="54" rx="6"/><rect x="954" y="233" width="46" height="54" rx="6"/><rect x="1013" y="233" width="46" height="54" rx="6"/><rect x="1072" y="233" width="46" height="54" rx="6"/>
+    </g>
+    <g fill="#b8cee6" font-size="15"><text x="70" y="317">JBD BMS · 4 cells</text><text x="345" y="317">JBD BMS · 4 cells</text><text x="620" y="317">JBD BMS · 4 cells</text><text x="895" y="317">JBD BMS · 4 cells</text></g>
+    <path d="M160 345V370H1010V345M575 370V404" stroke="#83a5d6" stroke-width="2" stroke-dasharray="6 6" fill="none" marker-end="url(#arrow)"/>
+    <text x="608" y="394" fill="#a8c9f6" font-size="15">BLE measurements</text>
+    <rect x="344" y="416" width="478" height="99" rx="18" fill="#224d66" stroke="#4acbbc" stroke-width="2"/>
+    <text x="369" y="448" fill="#eefffa" font-size="22" font-weight="700">ESP32 · virtual series collector</text>
+    <text x="369" y="478" fill="#bfebe8" font-size="17">Σ voltage · complete fresh evidence · individual cells</text>
+    <path d="M344 463H282" stroke="#83a5d6" stroke-width="3" marker-end="url(#arrow)"/>
+    <path d="M822 463H884" stroke="#83a5d6" stroke-width="3" marker-end="url(#arrow)"/>
+    <rect x="48" y="416" width="223" height="99" rx="16" fill="#243c60"/>
+    <text x="69" y="452" fill="#f1f7ff" font-size="21" font-weight="600">Home Assistant</text><text x="69" y="481" fill="#b8cee6" font-size="16">MQTT / ESPHome + card</text>
+    <rect x="895" y="416" width="256" height="99" rx="16" fill="#243c60"/>
+    <text x="916" y="452" fill="#f1f7ff" font-size="21" font-weight="600">Victron · optional</text><text x="916" y="481" fill="#b8cee6" font-size="16">Compatible MQTT bridge</text>
+    <text x="48" y="570" fill="#f1f7ff" font-size="18" font-weight="600">1 / 2 / 3 / 4 members per generated collector</text>
+    <text x="48" y="601" fill="#adc2dc" font-size="16">Cell inventory is configurable. Card layout does not change electrical wiring, BLE capacity or charging limits.</text>
+  </g>
+</svg>

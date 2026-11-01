@@ -26,6 +26,14 @@
 ESP32-based Bluetooth monitor for JBD BMS batteries, publishing measurements via
 MQTT to Home Assistant, other MQTT consumers, or Victron Venus OS.
 
+Each collector represents **one virtual battery made from physical batteries in
+series**, with individual cells inside each physical battery. Our installed
+strings contain four physical batteries each; new private configurations can
+represent one, two, three or four members with explicit cell inventories.
+See [virtual series batteries: configuration, diagrams, policies and runbook](docs/virtual-series-battery.md).
+
+![One virtual battery from physical batteries and their cells](images/virtual-series.svg)
+
 ## Install from your browser
 
 Use **[ESPHome Web](https://web.esphome.io/)** with a factory image built by
@@ -89,8 +97,9 @@ also read the same measurements. Do not install `dbus-mqtt-battery` for this set
 
 1. Start with `jbd-all-batteries1.yaml` and the matching local header/package.
    This maintained profile expects **four BMS, with four cells per BMS**. Use the
-   second profile for another four batteries; a different battery/cell count
-   requires adapting the polling and telemetry implementation.
+   second profile for another four batteries. For one, two, three or a different
+   cell inventory, use the [private series configuration generator](docs/virtual-series-battery.md#generate-a-private-configuration).
+   Non-four-cell generated profiles require the documented schema-2/HA route.
 2. Set your BMS addresses in `ble_client`, configure private Wi-Fi/API credentials,
    and point `mqtt.broker` at your own broker. Add broker authentication in the
    private configuration. Keep `battery` for Chain 1 and `battery2` for Chain 2.

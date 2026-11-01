@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 520" role="img" aria-labelledby="title desc">
+  <title id="title">Nominal series voltage examples for one to four physical batteries</title>
+  <desc id="desc">Illustration for four-cell LiFePO4 batteries at 3.2 volts per cell. One member is 12.8 volts, two are 25.6, three are 38.4 and four are 51.2. Series current and amp-hour capacity are not added.</desc>
+  <rect width="1200" height="520" rx="24" fill="#112139"/>
+  <g font-family="system-ui, sans-serif">
+    <text x="48" y="55" fill="#67e2c2" font-size="15" letter-spacing="2">SERIES VOLTAGE · AN ILLUSTRATION</text>
+    <text x="48" y="98" fill="#f1f7ff" font-size="31" font-weight="700">More members add volts, not series amps.</text>
+    <text x="48" y="130" fill="#b5c9e1" font-size="17">Example only: each physical battery contains 4 cells × 3.2 V nominal.</text>
+    <g stroke="#35506f" stroke-width="1"><path d="M98 185H800M98 235H800M98 285H800M98 335H800M98 385H800"/></g>
+    <g fill="#9eb5d1" font-size="13"><text x="49" y="190">51.2 V</text><text x="49" y="240">38.4 V</text><text x="49" y="290">25.6 V</text><text x="49" y="340">12.8 V</text><text x="70" y="390">0 V</text></g>
+    <rect x="127" y="335" width="110" height="50" rx="7" fill="#31c8b6"/><rect x="303" y="285" width="110" height="100" rx="7" fill="#38bdd0"/>
+    <rect x="479" y="235" width="110" height="150" rx="7" fill="#60a7ee"/><rect x="655" y="185" width="110" height="200" rx="7" fill="#9b93f5"/>
+    <g fill="#eef7ff" text-anchor="middle" font-size="20" font-weight="600"><text x="182" y="320">12.8 V</text><text x="358" y="270">25.6 V</text><text x="534" y="220">38.4 V</text><text x="710" y="170">51.2 V</text></g>
+    <g fill="#c2d4e9" text-anchor="middle" font-size="16"><text x="182" y="417">1 battery</text><text x="358" y="417">2 batteries</text><text x="534" y="417">3 batteries</text><text x="710" y="417">4 batteries</text></g>
+    <rect x="839" y="169" width="313" height="254" rx="18" fill="#203855"/>
+    <text x="864" y="206" fill="#f1f7ff" font-size="20" font-weight="600">One complete string</text>
+    <text x="864" y="246" fill="#68e4c6" font-size="19">Voltage = Σ member volts</text>
+    <text x="864" y="282" fill="#b8cce5" font-size="17">Current is not summed</text><text x="864" y="316" fill="#b8cce5" font-size="17">Ah is not summed</text>
+    <text x="864" y="366" fill="#ffce84" font-size="17">Missing member?</text><text x="864" y="393" fill="#ffce84" font-size="17">Total becomes unknown.</text>
+    <text x="48" y="477" fill="#a8bfd9" font-size="16">Nominal labels are not measured readings, voltage conversions or charger setpoints. Use actual cell chemistry/specifications.</text>
+  </g>
+</svg>

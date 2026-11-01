@@ -1,5 +1,10 @@
 # Battery telemetry during startup and reconnect
 
+This page documents the existing schema-1 four-cell contract. For new collectors
+with one through four physical members and configurable cell inventories, see
+[virtual series batteries](virtual-series-battery.md), including the explicit
+schema-2 incompatibility with the current Victron decoder.
+
 The two current four-BMS monitors collect battery measurements even while Wi-Fi
 or the Cerbo MQTT broker is unavailable. Wi-Fi, MQTT and API disconnection do not
 restart the ESP32. Hardware watchdogs still operate. The legacy eight-BMS example
