@@ -252,7 +252,9 @@ def main():
         parser.error(str(error))
     print(f"Created {output}/series.yaml; fill secrets.yaml, then run esphome config and esphome compile.")
     if any(count != 4 for count in args.cells):
-        print("Schema 2: HA/standalone only; current dbus-mqtt-battery schema-1 decoder is incompatible.")
+        print("Schema 2: Cerbo requires the dbus-mqtt-battery 2.8.0 beta extension and explicit "
+              "topology mode; older/default schema-1 configurations are incompatible. "
+              "HA/standalone entities remain supported. See docs/virtual-series-battery.md.")
 
 
 if __name__ == "__main__":
