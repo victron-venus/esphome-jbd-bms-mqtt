@@ -21,6 +21,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- Use the available Clang compiler for fuzz builds and verify its manifest declaration during deterministic seed replay. Sanitizer checks and mutation budgets are unchanged.
+
 ### Security
 - Require a private API encryption key and encrypted native OTA in all firmware
   profiles. Remove HTTP/captive-portal management and use a separate recovery-AP
