@@ -6,7 +6,7 @@ does not publish or install firmware. Record the exact source, ESPHome compiler,
 external-component commit and private configuration for a local firmware build.
 Consult [CHANGELOG.md](../CHANGELOG.md) for change and upgrade guidance.
 
-The supported CI compiler is the locked Linux ESPHome **2026.10.0b1 prerelease**.
+The supported CI compiler is the locked Linux ESPHome **2026.11.0b1 prerelease**.
 The README badge identifies that tested version, not a stable-release promise.
 Do not use the obsolete 2024.x compiler for the current encrypted-OTA profiles.
 Review actual device compatibility before any separately authorized upgrade.
