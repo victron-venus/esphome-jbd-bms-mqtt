@@ -12,7 +12,7 @@ encrypted API/OTA access, not a browser configuration page. Sensor acquisition,
 BLE selection, MQTT topics and polling are unchanged.
 
 These profiles require ESPHome's encrypted OTA support (2026.9.0 or newer). The
-actual CI compiler remains the pinned **2026.10.0b1 prerelease** described in
+actual CI compiler is the pinned **2026.11.0b1 prerelease** described in
 [CI_WORKFLOW.md](CI_WORKFLOW.md). That Linux build is not a recommendation to
 upgrade a live device to a prerelease. Review compiler/device compatibility and
 the existing configuration before any separately authorized installation.

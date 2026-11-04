@@ -27,12 +27,12 @@ migration. Their exact previous contents remain in `docs/legacy-workflows/`.
 Production deployment, where provided, requires manual dispatch from the default
 branch and the `production` environment; validation never deploys resources.
 
-The supported CI compiler is the **ESPHome 2026.10.0b1 prerelease**, with its
-official dependency constraints, on Linux and CPython 3.12. It includes
-PlatformIO 6.2.0, which permits the patched Starlette dependency; the previous
-ESPHome 2026.8.2 / PlatformIO 6.1.19 combination pinned a vulnerable version.
-The compiler lock deliberately targets Linux: the upstream prerelease's Intel
-macOS dependency constraint still selects an affected cryptography version.
+The supported CI compiler is the **ESPHome 2026.11.0b1 prerelease**, with its
+official dependency constraints, on Linux and CPython 3.12. It permits fixed
+Pillow 13.0.0 and filelock 4.2.6 without overrides. A compatible stable compiler
+should replace this CI prerelease only after the same full compile checks.
+The lock deliberately targets Linux: upstream's Intel-macOS cryptography 50.0.2
+pin conflicts with `aioesphomeapi`'s `<49` requirement there.
 The compiler job uses custom runners only when their configured labels include
 `linux` or the exact Linux x64 ARC scale-set name `victron-reserve-ci-x64`.
 ARC uses a scale-set name rather than a set of OS labels. Other custom targets
@@ -48,11 +48,18 @@ Both `.github/requirements-build.txt` and `.github/requirements-esphome.txt`
 contain exact versions and hashes. The installer first installs the locked
 build backends, then installs the compiler with build isolation disabled so
 source distributions cannot fetch an unpinned backend. It finishes with
-`pip check`. To refresh the compiler lock, review the upstream release and run:
+`pip check`. To refresh the compiler lock, review the upstream release and run
+from the repository root with uv 0.12.7:
 
 ```sh
-uv pip compile .github/requirements-esphome.in --generate-hashes --universal --python-version 3.12 -o .github/requirements-esphome.txt
+uv --directory .github pip compile requirements-esphome.in --generate-hashes --universal --python-version 3.12 -o requirements-esphome.txt
 ```
+
+The dedicated `.github/pyproject.toml` limits universal resolution to Linux
+without limiting architecture; x86_64 and aarch64 remain supported. Keep
+`--directory .github` so uv reads this scoped metadata. Root-level regeneration
+without it attempts unsupported operating-system branches. This file affects
+compiler lock regeneration, not runtime installation or other tooling.
 
 Keep the Linux markers in the input and generated lock, audit every selected
 package version, and pass all three Linux firmware builds before accepting an

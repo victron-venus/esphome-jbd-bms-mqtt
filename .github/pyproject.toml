@@ -1,0 +1,3 @@
+# Compiler lock regeneration supports Linux, including x86_64 and aarch64.
+[tool.uv]
+environments = ["sys_platform == 'linux'"]
