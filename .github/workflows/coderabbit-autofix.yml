@@ -26,7 +26,7 @@ jobs:
       (github.event_name == 'workflow_dispatch' ||
        (github.event.context == 'CodeRabbit' && github.event.state == 'success' &&
         github.event.sender.login == 'coderabbitai[bot]' && github.event.sender.type == 'Bot'))
-    uses: victron-venus/venus-os-ci-toolkit/.github/workflows/coderabbit-autofix-reusable.yml@a1068073ef4b60b52542cd48954a99b4bc0be008 # main
+    uses: victron-venus/venus-os-ci-toolkit/.github/workflows/coderabbit-autofix-reusable.yml@2439b9eb60cdbcd02edf43b62c551a357be3accc # main
     with:
       pull-request-number: ${{ inputs.pull-request-number || '' }}
       expected-head: ${{ inputs.expected-head || '' }}
