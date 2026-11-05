@@ -22,9 +22,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Changed
+- Advance the CI-only Linux compiler to the upstream ESPHome 2026.11.0b1 prerelease; keep all three firmware configurations and the generated maximum-cell compile required.
+- Regenerate complete compiler hashes with Linux-scoped `.github/pyproject.toml` metadata, preserving Linux x86_64 and aarch64 dependency branches.
 - Use the available Clang compiler for fuzz builds and verify its manifest declaration during deterministic seed replay. Sanitizer checks and mutation budgets are unchanged.
 
 ### Security
+- Select upstream-compatible Pillow 13.0.0 and filelock 4.2.6 in the compiler lock, addressing issue #108 without dependency overrides. This does not update or flash installed devices.
 - Require a private API encryption key and encrypted native OTA in all firmware
   profiles. Remove HTTP/captive-portal management and use a separate recovery-AP
   password. Existing devices need the [documented migration](docs/firmware-access.md)
