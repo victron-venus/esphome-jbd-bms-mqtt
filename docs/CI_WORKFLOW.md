@@ -52,7 +52,7 @@ source distributions cannot fetch an unpinned backend. It finishes with
 from the repository root with uv 0.12.7:
 
 ```sh
-uv --directory .github pip compile requirements-esphome.in --generate-hashes --universal --python-version 3.12 -o requirements-esphome.txt
+uv --directory .github pip compile requirements-esphome.in --generate-hashes --universal --python-version=3.12 --output-file=requirements-esphome.txt
 ```
 
 The dedicated `.github/pyproject.toml` limits universal resolution to Linux
@@ -60,6 +60,15 @@ without limiting architecture; x86_64 and aarch64 remain supported. Keep
 `--directory .github` so uv reads this scoped metadata. Root-level regeneration
 without it attempts unsupported operating-system branches. This file affects
 compiler lock regeneration, not runtime installation or other tooling.
+
+Renovate updates the independent build-backend lock and CI dependencies. The
+compiler input `.github/requirements-esphome.in` and its generated
+`.github/requirements-esphome.txt` stay on this manual procedure together:
+`crcmod==1.7` has no compatible wheels, so resolving this lock requires a source
+build. The update runner forbids package build-backend execution. Review and
+regenerate this pair in the controlled Linux environment above, then pass the
+full firmware compile matrix. This exception also applies to compiler security
+updates; GitHub vulnerability alerts remain enabled.
 
 Keep the Linux markers in the input and generated lock, audit every selected
 package version, and pass all three Linux firmware builds before accepting an
