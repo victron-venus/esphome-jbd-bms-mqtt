@@ -52,7 +52,7 @@ source distributions cannot fetch an unpinned backend. It finishes with
 from the repository root with uv 0.12.7:
 
 ```sh
-uv --directory .github pip compile requirements-esphome.in --generate-hashes --universal --python-version 3.12 -o requirements-esphome.txt
+uv --directory .github pip compile requirements-esphome.in --generate-hashes --universal --python-version=3.12 --output-file=requirements-esphome.txt
 ```
 
 The dedicated `.github/pyproject.toml` limits universal resolution to Linux

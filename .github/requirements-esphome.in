@@ -1,3 +1,4 @@
+# Regenerate with uv --directory .github pip compile requirements-esphome.in --generate-hashes --universal --python-version=3.12 --output-file=requirements-esphome.txt
 # This compiler lock supports Linux CI only. The installer enforces the host.
 esphome==2026.11.0b1 ; sys_platform == 'linux'
 # Required by the ESP32 firmware image generator.
