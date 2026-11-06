@@ -24,5 +24,14 @@
   ],
   "esphome_version": "2026.11.0b1",
   "visibility": "public",
-  "single_entry_ci": true
+  "single_entry_ci": true,
+  "change_scope": {
+    "documentation_paths": [],
+    "required_paths": [],
+    "always_validate_workflows": [
+      "codeql.yml",
+      "trivy-fs.yml"
+    ]
+  },
+  "nightly_cron": "29 3 * * *"
 }
