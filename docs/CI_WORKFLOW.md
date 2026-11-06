@@ -55,6 +55,14 @@ from the repository root with uv 0.12.7:
 uv --directory .github pip compile requirements-esphome.in --generate-hashes --universal --python-version=3.12 --output-file=requirements-esphome.txt
 ```
 
+For a transitive compiler security fix, append `--upgrade-package <name>` to
+the compile command above, replacing `<name>` with the affected package. Without
+that flag, uv can retain the existing lock pin. Verify that the regenerated lock
+selects a version in the advisory's fixed range on every affected marker branch.
+If the compiler constraints exclude the fix, coordinate a compatible compiler
+input, policy and matrix update instead of overriding those constraints. Retain
+the hash-checked installation, `pip check` and full firmware compile matrix.
+
 The dedicated `.github/pyproject.toml` limits universal resolution to Linux
 without limiting architecture; x86_64 and aarch64 remain supported. Keep
 `--directory .github` so uv reads this scoped metadata. Root-level regeneration
