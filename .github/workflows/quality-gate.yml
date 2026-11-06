@@ -43,7 +43,7 @@ jobs:
       - id: scope
         name: Classify documentation and build inputs
         env:
-          DOCUMENTATION_PATHS: '[]'
+          DOCUMENTATION_PATHS: '["GOVERNANCE.md"]'
           REQUIRED_PATHS: "[]"
           FORCE_FULL: ${{ inputs.force-full && 'true' || 'false' }}
         run: |
