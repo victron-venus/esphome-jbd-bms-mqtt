@@ -17,7 +17,9 @@
     "**/fixtures/**",
     "**/tools/browser-compatibility/**",
     "security/provider/**",
-    "build-support/tls-armv7/**"
+    "build-support/tls-armv7/**",
+    ".github/requirements-esphome.in",
+    ".github/requirements-esphome.txt"
   ],
   "packageRules": [],
   "pip_requirements": {
@@ -32,13 +34,16 @@
       "security/provider/**",
       "build-support/tls-armv7/**",
       ".github/requirements-esphome.txt",
-      ".github/requirements-build.txt"
+      ".github/requirements-build.txt",
+      ".github/requirements-esphome.in"
     ]
   },
   "pip-compile": {
     "managerFilePatterns": [
-      "/^\\.github/requirements\\-build\\.txt$/",
-      "/^\\.github/requirements\\-esphome\\.txt$/"
+      "/^\\.github/requirements\\-build\\.txt$/"
     ]
-  }
+  },
+  "description": [
+    "The Linux ESPHome compiler input and hashed lock require the reviewed manual source-build procedure: pinned crcmod 1.7 has no compatible wheels. Other native and CI updates remain automated."
+  ]
 }
