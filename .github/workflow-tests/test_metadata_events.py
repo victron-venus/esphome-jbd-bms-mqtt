@@ -160,10 +160,14 @@ class MetadataEventsTests(unittest.TestCase):
                     workflow, context("edited", {"base": {"ref": {"from": "other"}}})
                 )
                 assert active == pending
-                assert active == retargeted
+                if name == CALLERS[1]:
+                    self.assertNotEqual(active, retargeted)
+                else:
+                    self.assertEqual(active, retargeted)
                 assert ignored not in (active, pending)
                 assert ignored != next_ignored
-                assert workflow["concurrency"]["cancel-in-progress"] == "true"
+                expected_cancel = "false" if name == CALLERS[1] else "true"
+                assert workflow["concurrency"]["cancel-in-progress"] == expected_cancel
                 for trigger in workflow["on"].values():
                     assert "edited" in trigger["types"]
                     assert "converted_to_draft" in trigger["types"]
@@ -205,6 +209,74 @@ class MetadataEventsTests(unittest.TestCase):
                         bool(evaluate(condition, data)),
                         event == "pull_request_target" and base == "main",
                     )
+
+    def test_withdrawals_survive_later_positive_and_ignored_events(self):
+        """Every withdrawal keeps a queue slot without cancelling the positive waiter."""
+        workflow = definition(CALLERS[1])
+        assert workflow["concurrency"]["cancel-in-progress"] == "false"
+        for action in ("unlabeled", "converted_to_draft", "edited"):
+            withdrawals = []
+            for run in ("20", "21"):
+                data = context(action, run=run)
+                event = data["github"]["event"]
+                event["label"] = {"name": "automerge"}
+                if action == "edited":
+                    event["changes"] = {"base": {"ref": {"from": "main"}}}
+                    event["pull_request"]["base"]["ref"] = "other"
+                withdrawals.append(data)
+            later = [
+                context("synchronize", run="22"),
+                context("labeled", run="23"),
+                context("edited", {"body": {"from": "old"}}, run="24"),
+            ]
+            pending = {group(workflow, event): event for event in withdrawals + later}
+            with self.subTest(action=action):
+                for event in withdrawals:
+                    assert event in pending.values()
+                    assert evaluate(workflow["jobs"]["auto-merge"]["if"], event)
+                assert group(workflow, withdrawals[0]) != group(
+                    workflow, withdrawals[1]
+                )
+                assert all(
+                    group(workflow, event) != group(workflow, following)
+                    for event in withdrawals
+                    for following in later
+                )
+
+    def test_nonwithdrawals_keep_the_positive_queue(self):
+        """Unrelated label removal and ordinary wakeups keep coalescing."""
+        workflow = definition(CALLERS[1])
+        expected = group(workflow, context("opened"))
+        unrelated = context("unlabeled", run="30")
+        unrelated["github"]["event"]["label"] = {"name": "documentation"}
+        for event in (unrelated, context("synchronize", run="32")):
+            with self.subTest(event=event):
+                assert group(workflow, event) == expected
+
+    def test_all_base_edits_keep_an_independent_queue_slot(self):
+        """Keep case-only retargets and returns to main ahead of later wakeups."""
+        workflow = definition(CALLERS[1])
+        later = [
+            context("synchronize", run="42"),
+            context("edited", {"body": {"from": "old"}}, run="43"),
+        ]
+        for target in ("Main", "MAIN", "other", "main"):
+            edits = []
+            for run in ("40", "41"):
+                data = context("edited", {"base": {"ref": {"from": "other"}}}, run=run)
+                data["github"]["event"]["pull_request"]["base"]["ref"] = target
+                edits.append(data)
+            pending = {group(workflow, event): event for event in edits + later}
+            with self.subTest(base=target):
+                for event in edits:
+                    self.assertIn(event, pending.values())
+                    for following in later:
+                        self.assertNotEqual(
+                            group(workflow, event), group(workflow, following)
+                        )
+                self.assertNotEqual(
+                    group(workflow, edits[0]), group(workflow, edits[1])
+                )
 
 
 if __name__ == "__main__":
