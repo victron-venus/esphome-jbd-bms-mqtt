@@ -594,6 +594,8 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for reports, development checks and pull 
 [SECURITY.md](SECURITY.md) for private vulnerability reporting and deployment trust boundaries,
 and the [OpenSSF evidence index](docs/openssf-evidence.md) for assessment references and remaining verification.
 
+Docs index: [docs/README.md](docs/README.md).
+
 ## Fuzz assessment
 
 The production battery collector has a bounded public-RC libFuzzer assessment and deterministic sanitizer seed replay. See [the target, cost policy, evidence, and reproduction guide](docs/fuzzing.md).
