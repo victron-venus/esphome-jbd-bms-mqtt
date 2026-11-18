@@ -10,3 +10,4 @@ secrets.yaml
 # macOS Finder metadata
 .DS_Store
 .fuzz-build/
+A*S.md
