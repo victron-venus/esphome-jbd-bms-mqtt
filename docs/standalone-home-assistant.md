@@ -24,11 +24,14 @@ eight-BMS profile, not the recommended starting point.
 The two maintained profiles require all four BMS and their four cells. For one,
 two, three or four physical members with an explicit cell inventory, use the
 [private series configuration generator and commissioning runbook](virtual-series-battery.md).
-It generates polling, sensors and evidence collection together; a card setting
-alone does not change the collector. Non-four-cell profiles use schema 2 and
-are not supported by the current Victron bridge. The aggregate voltage/current calculations assume a series chain;
-parallel or unrelated batteries need different aggregate calculations. Individual
-BMS measurements are still the source for each battery's own display.
+It generates polling, sensors and evidence collection together. The card displays
+the resulting sensor entities. Non-four-cell profiles publish schema 2 for the
+atomic MQTT snapshot. Home Assistant uses the discovered entities for either
+schema. If you also use a Cerbo, follow the [bridge compatibility and commissioning
+guide](virtual-series-battery.md#mqtt-contracts-and-victron-boundary). The aggregate
+voltage and current calculations assume a series chain. Parallel or unrelated
+batteries need different aggregate calculations. Individual BMS measurements are
+still the source for each battery's own display.
 
 Copy the selected profile, `components/battery_telemetry.h`, and
 `packages/mqtt-availability.yaml` to the device's private configuration directory,

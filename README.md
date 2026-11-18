@@ -469,11 +469,10 @@ Cerbo services and their configuration in place.
 New generated profiles with 1–4 four-cell members also use schema 1, with the
 bridge configured to match their member count, BMS IDs and MQTT prefix. Profiles
 with any other cell count use **schema 2**. Cerbo support requires the
-**dbus-mqtt-battery 2.8.0 beta extension** and an explicitly configured topology.
-Select and pin a `v2.8.0-beta.*` prerelease from the
-[bridge releases](https://github.com/victron-venus/dbus-mqtt-battery/releases).
-Older releases and the default schema-1 configuration do not accept schema 2. Start with the
-[bridge topology guide](https://github.com/victron-venus/dbus-mqtt-battery/blob/9ff889101350f8a148842dfc5091c096f993e95a/docs/flexible-topology.md)
+[dbus-mqtt-battery v2.8.0 stable release](https://github.com/victron-venus/dbus-mqtt-battery/releases/tag/v2.8.0)
+or a newer compatible release, with an explicitly configured topology. The
+default bridge configuration continues to use schema 1. Start with the
+[bridge topology guide](https://github.com/victron-venus/dbus-mqtt-battery/blob/d9dfc35dc2b48215f925134cf67e9891b4e3093a/docs/flexible-topology.md)
 and follow the [Victron compatibility boundary](docs/virtual-series-battery.md#mqtt-contracts-and-victron-boundary)
 before commissioning a new topology. Standalone Home Assistant needs no bridge.
 
