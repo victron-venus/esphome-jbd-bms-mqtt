@@ -30,44 +30,64 @@ class TelemetryTests(unittest.TestCase):
         }
         void check_partial_reporting() {
           Snapshot s;
-          for (unsigned b=0; b<4; ++b) fill(s,b,100);
-          assert(s.ready(100) && s.report(100).members==4);
+          for (unsigned b=0; b<4; ++b) {
+            fill(s,b,100);
+            s.record(b,SOC,80.0f,100);
+          }
+          auto report=s.report(100);
+          assert(s.ready(100) && report.members==4 && !report.estimated);
+          assert(report.pack_soc==80.0f);
+          assert(std::abs(report.pack_voltage-52.8f)<0.001f);
 
           // BMS 2 never replies during over an hour of otherwise fresh rounds.
           for (uint32_t now=5100; now<=3615100; now+=5000) {
             s.begin_round();
             for (unsigned b : {0U, 2U, 3U}) {
               fill(s,b,now);
-              s.record(b,SOC,40.0f+b,now);
+              s.record(b,SOC,70.0f+5*b,now);
               s.end_sample(b);
             }
-            auto report=s.report(now+10);
+            report=s.report(now+10);
             assert(!s.ready(now+10) && s.valid_mask(now+10)==13);
-            assert(report.members==3 && report.average_current==-2.0f);
-            assert(std::abs(report.voltage_subtotal-39.6f)<0.001f);
-            assert(std::abs(report.power_subtotal+79.2f)<0.001f);
-            assert(report.lowest_soc==40.0f);
+            assert(report.members==3 && report.estimated && report.average_current==-2.0f);
+            assert(std::abs(report.pack_voltage-52.8f)<0.001f);
+            assert(std::abs(report.pack_power+105.6f)<0.001f);
+            assert(std::abs(report.pack_soc-78.333333f)<0.001f);
           }
 
           uint32_t now=3625100;
+          s.begin_round();
+          fill(s,0,now);
+          s.record(0,VOLTAGE,12.0f,now);
+          s.record(0,SOC,50.0f,now);
+          fill(s,3,now);
+          s.record(3,VOLTAGE,14.0f,now);
+          s.record(3,CURRENT,-4.0f,now);
+          s.record(3,SOC,90.0f,now);
+          report=s.report(now);
+          assert(!s.ready(now) && report.members==2 && report.estimated);
+          assert(report.pack_voltage==52.0f && report.average_current==-3.0f);
+          assert(report.pack_power==-160.0f && report.pack_soc==70.0f);
+
           s.begin_round();
           fill(s,0,now);
           s.record(0,CURRENT,0.0f,now);
           // A second BMS with an invalid cell cannot contribute its other values.
           fill(s,2,now);
           s.record(2,CELL1,NAN,now);
-          auto report=s.report(now);
-          assert(report.members==1 && report.voltage_subtotal==13.2f);
-          assert(report.average_current==0.0f && report.power_subtotal==0.0f);
-          assert(report.lowest_soc==0.0f);
+          report=s.report(now);
+          assert(report.members==1 && report.estimated && report.pack_voltage==52.8f);
+          assert(report.average_current==0.0f && report.pack_power==0.0f);
+          assert(report.pack_soc==0.0f);
           report=s.report(now+Snapshot::MAX_AGE_MS);
-          assert(report.members==0 && std::isnan(report.voltage_subtotal));
-          assert(std::isnan(report.average_current) && std::isnan(report.power_subtotal));
-          assert(std::isnan(report.lowest_soc));
+          assert(report.members==0 && report.estimated && std::isnan(report.pack_voltage));
+          assert(std::isnan(report.average_current) && std::isnan(report.pack_power));
+          assert(std::isnan(report.pack_soc));
           s.begin_round();
           assert(s.report(now).members==0);
           for (unsigned b=0; b<4; ++b) fill(s,b,now);
-          assert(s.ready(now) && s.report(now).members==4);
+          report=s.report(now);
+          assert(s.ready(now) && report.members==4 && !report.estimated);
         }
         int main() {
           check_partial_reporting();
@@ -164,8 +184,8 @@ class TelemetryTests(unittest.TestCase):
             )
             subprocess.run([str(binary)], check=True, timeout=5)
 
-    def test_both_chains_wire_every_raw_measurement_and_only_publish_live(self):
-        """Require matching field callbacks and live-only snapshots on both chains."""
+    def test_both_chains_wire_reporting_and_publish_live_snapshots(self):
+        """Require reporting entities, field callbacks and live snapshots on both chains."""
 
         class Loader(yaml.SafeLoader):
             pass
@@ -210,6 +230,23 @@ class TelemetryTests(unittest.TestCase):
                     self.assertIn(f".record({index},", callback)
                     self.assertIn(f".sample_ready({index},", callback)
             actions = config["script"][0]["then"]
+            estimated = [sensor for sensor in config["binary_sensor"] if sensor.get("name") == "Estimated"]
+            self.assertEqual(len(estimated), 1)
+            self.assertEqual(estimated[0]["platform"], "template")
+            report_fields = (
+                ("reporting_bms_count", "members"),
+                ("reporting_pack_voltage", "pack_voltage"),
+                ("reporting_average_current", "average_current"),
+                ("reporting_pack_power", "pack_power"),
+                ("reporting_pack_soc", "pack_soc"),
+                (estimated[0]["id"], "estimated"),
+            )
+            reporting = next(
+                action["lambda"] for action in actions
+                if ".report(millis())" in action.get("lambda", "")
+            )
+            for entity, field in report_fields:
+                self.assertIn(f"id({entity}).publish_state(report.{field});", reporting)
             publish = next(action["if"] for action in actions if "if" in action)
             self.assertEqual(publish["condition"], {"mqtt.connected": None})
             message = publish["then"][0]["mqtt.publish_json"]
