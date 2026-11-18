@@ -14,6 +14,14 @@ enum Field : uint8_t {
   STATUS, CAPACITY, CYCLES, FIELD_COUNT
 };
 
+struct ReportingSample {
+  unsigned members{0};
+  float voltage_subtotal{NAN};
+  float average_current{NAN};
+  float power_subtotal{NAN};
+  float lowest_soc{NAN};
+};
+
 /// Collect validated callback evidence inside explicit per-BMS windows.
 class Snapshot {
  public:
@@ -63,6 +71,31 @@ class Snapshot {
       if (sample_ready(i, now)) result |= 1U << i;
     return result;
   }
+  /// Display-only statistics over fresh, complete members of the current round.
+  ReportingSample report(uint32_t now) const {
+    ReportingSample result;
+    double voltage = 0.0;
+    double current = 0.0;
+    double power = 0.0;
+    const unsigned mask = valid_mask(now);
+    for (unsigned i = 0; i < samples_.size(); ++i) {
+      if ((mask & (1U << i)) == 0) continue;
+      const double volts = value(i, VOLTAGE);
+      const double amps = value(i, CURRENT);
+      const float soc = value(i, SOC);
+      voltage += volts;
+      current += amps;
+      power += volts * amps;
+      if (result.members == 0 || soc < result.lowest_soc) result.lowest_soc = soc;
+      ++result.members;
+    }
+    if (result.members > 0) {
+      result.voltage_subtotal = report_value(voltage);
+      result.average_current = report_value(current / result.members);
+      result.power_subtotal = report_value(power);
+    }
+    return result;
+  }
   /// Return oldest required callback age, or the expiry sentinel if incomplete.
   uint32_t age_ms(unsigned index, uint32_t now) const {
     const auto &sample = samples_[index];
@@ -102,6 +135,11 @@ class Snapshot {
   uint32_t next_sequence() { return ++sequence_; }
 
  private:
+  static float report_value(double value) {
+    return std::abs(value) <= std::numeric_limits<float>::max()
+      ? static_cast<float>(value) : NAN;
+  }
+
   struct Sample {
     std::array<float, FIELD_COUNT> values{};
     std::array<uint32_t, FIELD_COUNT> times{};

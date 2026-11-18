@@ -28,7 +28,49 @@ class TelemetryTests(unittest.TestCase):
           for (unsigned f=0; f<=STATUS; ++f)
             if (static_cast<int>(f)!=omit) s.record(b, static_cast<Field>(f), values[f], now);
         }
+        void check_partial_reporting() {
+          Snapshot s;
+          for (unsigned b=0; b<4; ++b) fill(s,b,100);
+          assert(s.ready(100) && s.report(100).members==4);
+
+          // BMS 2 never replies during over an hour of otherwise fresh rounds.
+          for (uint32_t now=5100; now<=3615100; now+=5000) {
+            s.begin_round();
+            for (unsigned b : {0U, 2U, 3U}) {
+              fill(s,b,now);
+              s.record(b,SOC,40.0f+b,now);
+              s.end_sample(b);
+            }
+            auto report=s.report(now+10);
+            assert(!s.ready(now+10) && s.valid_mask(now+10)==13);
+            assert(report.members==3 && report.average_current==-2.0f);
+            assert(std::abs(report.voltage_subtotal-39.6f)<0.001f);
+            assert(std::abs(report.power_subtotal+79.2f)<0.001f);
+            assert(report.lowest_soc==40.0f);
+          }
+
+          uint32_t now=3625100;
+          s.begin_round();
+          fill(s,0,now);
+          s.record(0,CURRENT,0.0f,now);
+          // A second BMS with an invalid cell cannot contribute its other values.
+          fill(s,2,now);
+          s.record(2,CELL1,NAN,now);
+          auto report=s.report(now);
+          assert(report.members==1 && report.voltage_subtotal==13.2f);
+          assert(report.average_current==0.0f && report.power_subtotal==0.0f);
+          assert(report.lowest_soc==0.0f);
+          report=s.report(now+Snapshot::MAX_AGE_MS);
+          assert(report.members==0 && std::isnan(report.voltage_subtotal));
+          assert(std::isnan(report.average_current) && std::isnan(report.power_subtotal));
+          assert(std::isnan(report.lowest_soc));
+          s.begin_round();
+          assert(s.report(now).members==0);
+          for (unsigned b=0; b<4; ++b) fill(s,b,now);
+          assert(s.ready(now) && s.report(now).members==4);
+        }
         int main() {
+          check_partial_reporting();
           Snapshot s;
           s.begin_session(0x1234, 0x5678);
           assert(!s.ready(0));

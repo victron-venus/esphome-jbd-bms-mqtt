@@ -79,7 +79,25 @@ raw measurement, and `temperatures` contains the same single value (not an avera
 Unavailable required numeric fields are JSON null, never invented zeroes.
 Incomplete entries have age 60000, `online: false`, and make `ready: false`.
 The last samples are frozen at the end of each BMS request; a new round discards
-all previous evidence. Aggregate sensors publish NaN when the round is incomplete.
+all previous evidence. Complete-series sensors publish NaN when the round is incomplete.
+
+## Reporting when Bluetooth drops out
+
+Use the `Reporting` sensors in the two four-BMS profiles for dashboards and
+graphs. They are published at the end of every polling round. `Reporting BMS
+Count` is the number of fresh, complete member samples (0–4). For those same
+members, the monitor reports the voltage subtotal, mean current, power subtotal
+and lowest member SOC. After an hour without one BMS, the report can still contain
+three members with current measurements. The subtotal will be lower when fewer
+members respond. Display the count alongside it.
+
+When no member answers, the count is zero and every measurement is unknown
+(NaN), which also clears the previous numeric readings. Genuine 0 A, 0 W and
+0% SOC remain numeric. On recovery the member returns to the report after a
+new complete sample. The report does not extrapolate voltage or reuse any
+expired member reading. The full-series measurements and schema-1 readiness
+used by Cerbo still require all four members. Keep the `Reporting` entities out
+of charging limits or other BMS protection decisions.
 
 Each entry also exposes field evidence for consumers that tolerate a short lost
 BLE reply after a complete snapshot. Bits 0–8 of `seen_mask` and `valid_mask`
