@@ -487,7 +487,7 @@ sensor:
     name: "uptime"
     update_interval: 60s
 
-  # Reporting only: these values can describe fewer than four batteries.
+  # Reporting only: estimate the whole pack from current-round observations.
   - platform: template
     name: "Reporting BMS Count"
     id: reporting_bms_count
@@ -496,8 +496,8 @@ sensor:
     update_interval: never
 
   - platform: template
-    name: "Reporting Voltage Subtotal"
-    id: reporting_voltage_subtotal
+    name: "Reporting Pack Voltage"
+    id: reporting_pack_voltage
     unit_of_measurement: "V"
     accuracy_decimals: 2
     entity_category: diagnostic
@@ -512,18 +512,18 @@ sensor:
     update_interval: never
 
   - platform: template
-    name: "Reporting Power Subtotal"
-    id: reporting_power_subtotal
+    name: "Reporting Pack Power"
+    id: reporting_pack_power
     unit_of_measurement: "W"
     accuracy_decimals: 1
     entity_category: diagnostic
     update_interval: never
 
   - platform: template
-    name: "Reporting Lowest Member SOC"
-    id: reporting_lowest_soc
+    name: "Reporting Pack SOC"
+    id: reporting_pack_soc
     unit_of_measurement: "%"
-    accuracy_decimals: 0
+    accuracy_decimals: 1
     entity_category: diagnostic
     update_interval: never
 
@@ -619,6 +619,11 @@ sensor:
       return values[0];
 
 binary_sensor:
+  - platform: template
+    name: "Estimated"
+    id: reporting_estimated
+    entity_category: diagnostic
+
   - platform: jbd_bms_ble
     jbd_bms_ble_id: bms1
     charging:
@@ -734,14 +739,15 @@ script:
           id(chain1_min_soc_sensor).update();
           id(chain1_capacity_remaining_sensor).update();
 
-      # Publish partial observations separately from complete-series totals.
+      # Publish the pack report separately from complete-series totals.
       - lambda: |-
           const auto report = battery_telemetry::snapshot().report(millis());
           id(reporting_bms_count).publish_state(report.members);
-          id(reporting_voltage_subtotal).publish_state(report.voltage_subtotal);
+          id(reporting_pack_voltage).publish_state(report.pack_voltage);
           id(reporting_average_current).publish_state(report.average_current);
-          id(reporting_power_subtotal).publish_state(report.power_subtotal);
-          id(reporting_lowest_soc).publish_state(report.lowest_soc);
+          id(reporting_pack_power).publish_state(report.pack_power);
+          id(reporting_pack_soc).publish_state(report.pack_soc);
+          id(reporting_estimated).publish_state(report.estimated);
 
       # Atomic live-only contract consumed by dbus-mqtt-battery.
       - if:

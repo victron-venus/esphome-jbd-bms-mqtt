@@ -16,10 +16,11 @@ enum Field : uint8_t {
 
 struct ReportingSample {
   unsigned members{0};
-  float voltage_subtotal{NAN};
+  bool estimated{true};
+  float pack_voltage{NAN};
   float average_current{NAN};
-  float power_subtotal{NAN};
-  float lowest_soc{NAN};
+  float pack_power{NAN};
+  float pack_soc{NAN};
 };
 
 /// Collect validated callback evidence inside explicit per-BMS windows.
@@ -71,28 +72,31 @@ class Snapshot {
       if (sample_ready(i, now)) result |= 1U << i;
     return result;
   }
-  /// Display-only statistics over fresh, complete members of the current round.
+  /// For display, impute each missing member from the mean of fresh members.
   ReportingSample report(uint32_t now) const {
     ReportingSample result;
     double voltage = 0.0;
     double current = 0.0;
     double power = 0.0;
+    double soc = 0.0;
     const unsigned mask = valid_mask(now);
     for (unsigned i = 0; i < samples_.size(); ++i) {
       if ((mask & (1U << i)) == 0) continue;
       const double volts = value(i, VOLTAGE);
       const double amps = value(i, CURRENT);
-      const float soc = value(i, SOC);
       voltage += volts;
       current += amps;
       power += volts * amps;
-      if (result.members == 0 || soc < result.lowest_soc) result.lowest_soc = soc;
+      soc += value(i, SOC);
       ++result.members;
     }
     if (result.members > 0) {
-      result.voltage_subtotal = report_value(voltage);
+      const double scale = static_cast<double>(samples_.size()) / result.members;
+      result.estimated = result.members != samples_.size();
+      result.pack_voltage = report_value(voltage * scale);
       result.average_current = report_value(current / result.members);
-      result.power_subtotal = report_value(power);
+      result.pack_power = report_value(power * scale);
+      result.pack_soc = report_value(soc / result.members);
     }
     return result;
   }

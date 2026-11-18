@@ -84,20 +84,24 @@ all previous evidence. Complete-series sensors publish NaN when the round is inc
 ## Reporting when Bluetooth drops out
 
 Use the `Reporting` sensors in the two four-BMS profiles for dashboards and
-graphs. They are published at the end of every polling round. `Reporting BMS
-Count` is the number of fresh, complete member samples (0–4). For those same
-members, the monitor reports the voltage subtotal, mean current, power subtotal
-and lowest member SOC. After an hour without one BMS, the report can still contain
-three members with current measurements. The subtotal will be lower when fewer
-members respond. Display the count alongside it.
+graphs. At the end of each polling round, `Reporting BMS Count` gives the
+number of fresh, complete samples (0–4). For each missing member the report uses
+the mean of the responding members. `Reporting Pack Voltage` and `Reporting
+Pack Power` multiply the mean voltage and mean member power by four. The
+reported series current and pack SOC are means. For example, three members at
+13.2 V and 80% SOC give a pack estimate of 52.8 V and 80%.
 
-When no member answers, the count is zero and every measurement is unknown
-(NaN), which also clears the previous numeric readings. Genuine 0 A, 0 W and
-0% SOC remain numeric. On recovery the member returns to the report after a
-new complete sample. The report does not extrapolate voltage or reuse any
-expired member reading. The full-series measurements and schema-1 readiness
-used by Cerbo still require all four members. Keep the `Reporting` entities out
-of charging limits or other BMS protection decisions.
+The `Estimated` binary sensor is on whenever fewer than four members have
+complete samples. In Home Assistant, use it alongside the reporting entities
+to distinguish partial estimates. When zero members answer, the count is zero,
+the flag is on and all reporting measurements are unknown (NaN). Genuine
+0 A, 0 W and 0% SOC remain numeric. The first full round after a recovery turns
+the flag off.
+
+Use real measurements for battery protection. Complete-series sensors and
+schema-1 readiness still require all four members. On a Cerbo with a dedicated
+SmartShunt, Venus OS can use its measured SOC as the system battery monitor
+while the BMS supplies DVCC limits separately.
 
 Each entry also exposes field evidence for consumers that tolerate a short lost
 BLE reply after a complete snapshot. Bits 0–8 of `seen_mask` and `valid_mask`
