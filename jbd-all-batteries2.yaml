@@ -484,6 +484,46 @@ sensor:
     name: "uptime"
     update_interval: 60s
 
+  # Reporting only: these values can describe fewer than four batteries.
+  - platform: template
+    name: "Reporting BMS Count"
+    id: reporting_bms_count
+    accuracy_decimals: 0
+    entity_category: diagnostic
+    update_interval: never
+
+  - platform: template
+    name: "Reporting Voltage Subtotal"
+    id: reporting_voltage_subtotal
+    unit_of_measurement: "V"
+    accuracy_decimals: 2
+    entity_category: diagnostic
+    update_interval: never
+
+  - platform: template
+    name: "Reporting Average Current"
+    id: reporting_average_current
+    unit_of_measurement: "A"
+    accuracy_decimals: 2
+    entity_category: diagnostic
+    update_interval: never
+
+  - platform: template
+    name: "Reporting Power Subtotal"
+    id: reporting_power_subtotal
+    unit_of_measurement: "W"
+    accuracy_decimals: 1
+    entity_category: diagnostic
+    update_interval: never
+
+  - platform: template
+    name: "Reporting Lowest Member SOC"
+    id: reporting_lowest_soc
+    unit_of_measurement: "%"
+    accuracy_decimals: 0
+    entity_category: diagnostic
+    update_interval: never
+
   # Aggregated sensors (Chain Totals)
   - platform: template
     name: "voltage_total"
@@ -690,6 +730,15 @@ script:
           id(chain2_total_current_sensor).update();
           id(chain2_min_soc_sensor).update();
           id(chain2_capacity_remaining_sensor).update();
+
+      # Publish partial observations separately from complete-series totals.
+      - lambda: |-
+          const auto report = battery_telemetry::snapshot().report(millis());
+          id(reporting_bms_count).publish_state(report.members);
+          id(reporting_voltage_subtotal).publish_state(report.voltage_subtotal);
+          id(reporting_average_current).publish_state(report.average_current);
+          id(reporting_power_subtotal).publish_state(report.power_subtotal);
+          id(reporting_lowest_soc).publish_state(report.lowest_soc);
 
       # Atomic live-only contract consumed by dbus-mqtt-battery.
       - if:
