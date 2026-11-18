@@ -90,6 +90,22 @@ class SeriesConfigTests(unittest.TestCase):
                 self.assertNotEqual(result.returncode, 0)
                 self.assertFalse(output.exists())
 
+    def test_topic_prefix_fits_cerbo_manifest(self):
+        with tempfile.TemporaryDirectory() as directory:
+            output = Path(directory) / "project"
+            prefix = "test/" + "a" * 251
+            command = [sys.executable, str(ROOT / "scripts/generate-series-config.py"), "--name", "test-series",
+                       "--topic-prefix", prefix + "a", "--cells", "16", "--output", str(output)]
+            rejected = subprocess.run(command, capture_output=True, check=False)
+            self.assertEqual(rejected.returncode, 2)
+            self.assertIn(b"topic-prefix must be at most 256 characters", rejected.stderr)
+            self.assertFalse(output.exists())
+
+            command[command.index("--topic-prefix") + 1] = prefix
+            subprocess.run(command, check=True, capture_output=True)
+            topology = json.loads((output / "topology.json").read_text())
+            self.assertEqual(topology["topic_prefix"], prefix)
+
     def test_output_boundary_rejects_traversal_checkout_and_unrelated_roots(self):
         for destination in (Path(tempfile.gettempdir()) / "new" / ".." / "escape",
                             ROOT / "generated-project", Path("/etc/jbd-generated-project"),

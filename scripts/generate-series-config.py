@@ -18,6 +18,7 @@ ROOT = Path(__file__).resolve().parents[1]
 TELEMETRY_HEADER = "components/series_telemetry.h"
 SECRETS_EXAMPLE = "secrets.example.yaml"
 PROJECT_FILENAMES = frozenset(("series.yaml", SECRETS_EXAMPLE, "topology.json", "series_telemetry.h"))
+MAX_TOPIC_PREFIX_LENGTH = 256  # Match the Cerbo topology manifest's limit.
 
 
 class Secret(str):
@@ -235,15 +236,18 @@ def main():
     """Write a separate project, refusing existing paths or repository output."""
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--name", required=True, help="Unique ESPHome name, lowercase letters/digits/hyphens")
-    parser.add_argument("--topic-prefix", required=True, help="Unique MQTT prefix for this collector")
+    parser.add_argument("--topic-prefix", required=True,
+                        help=f"Unique MQTT prefix for this collector (up to {MAX_TOPIC_PREFIX_LENGTH} characters)")
     parser.add_argument("--cells", required=True, type=parse_cells, help="Physical member cell counts, e.g. 4,4,4,4 or 16")
     parser.add_argument("--output", required=True, type=Path,
                         help="New private project directory under home or OS temporary storage, outside this checkout")
     args = parser.parse_args()
     if not re.fullmatch(r"[a-z][a-z0-9-]{0,30}", args.name):
         parser.error("name must start with a lowercase letter and contain at most 31 letters/digits/hyphens")
-    if not re.fullmatch(r"[A-Za-z0-9_-]+(?:/[A-Za-z0-9_-]+)*", args.topic_prefix):
-        parser.error("topic-prefix must contain nonempty letters/digits/underscore/hyphen segments")
+    if len(args.topic_prefix) > MAX_TOPIC_PREFIX_LENGTH or not re.fullmatch(
+            r"[A-Za-z0-9_-]+(?:/[A-Za-z0-9_-]+)*", args.topic_prefix):
+        parser.error(f"topic-prefix must be at most {MAX_TOPIC_PREFIX_LENGTH} characters of slash-separated "
+                     "ASCII letters/digits/underscore/hyphen segments")
     config = build_config(args.name, args.topic_prefix, args.cells)
     contents = project_texts(args, config)
     try:
@@ -252,8 +256,8 @@ def main():
         parser.error(str(error))
     print(f"Created {output}/series.yaml; fill secrets.yaml, then run esphome config and esphome compile.")
     if any(count != 4 for count in args.cells):
-        print("Schema 2: Cerbo requires the dbus-mqtt-battery 2.8.0 beta extension and explicit "
-              "topology mode; older/default schema-1 configurations are incompatible. "
+        print("Schema 2: Cerbo requires dbus-mqtt-battery v2.8.0 stable or a newer compatible release "
+              "and explicit topology mode. "
               "HA/standalone entities remain supported. See docs/virtual-series-battery.md.")
 
 

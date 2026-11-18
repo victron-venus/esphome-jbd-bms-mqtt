@@ -39,7 +39,9 @@ before choosing a board or installer.
 ## Generate a private configuration
 
 Use the Python environment containing ESPHome and PyYAML. Choose a new directory,
-unique ESPHome name and MQTT prefix for each collector:
+unique ESPHome name and MQTT prefix for each collector. The prefix accepts up to
+256 characters, matching the Cerbo topology limit. Use slash-separated segments
+with ASCII letters, digits, underscores or hyphens:
 
 ```bash
 python scripts/generate-series-config.py \
@@ -137,19 +139,19 @@ for a 16-cell BMS therefore cannot produce `ready=true`.
 
 If every member has exactly four cells, generated frames use **schema 1** and the
 existing required evidence mask `511`. The current `dbus-mqtt-battery` decoder
-accepts a configurable member count, but its deployment must match the generated
-inventory: `count`, `bms_first=1`, `cells_per_bms=4`, MQTT prefix, actual chemistry,
-cell voltage limits and charger/inverter settings. Existing defaults for four
-members must not be reused blindly for one, two or three. Schema compatibility
-alone is not commissioning or a guarantee that a particular inverter supports
-the new voltage class.
+accepts a configurable member count. In the original configuration path, set
+`[battery]` `count` to the generated member count, `bms_first=1`, `cells_per_bms=4`,
+and match `[mqtt]` `topic_prefix` with `telemetry_mode=atomic`. The default
+SetupHelper path assigns `battery`, `battery2`, and so on. For a generated custom
+prefix such as `house-battery`, use
+an explicit Cerbo topology manifest with `telemetry_schema: 1`. Verify battery
+chemistry, cell limits and charger/inverter settings for the actual string
+before commissioning.
 
 If **any member has a different cell count**, generated frames use **schema 2**.
-Cerbo support requires the **dbus-mqtt-battery 2.8.0 beta extension** and an
-**explicit topology configuration**. Select and pin a `v2.8.0-beta.*` prerelease
-from the [bridge releases](https://github.com/victron-venus/dbus-mqtt-battery/releases).
-This is a beta feature. Older releases and the default configuration continue to
-use the schema-1 decoder; upgrading the package alone does not enable schema 2.
+For Cerbo, pin [dbus-mqtt-battery v2.8.0 stable](https://github.com/victron-venus/dbus-mqtt-battery/releases/tag/v2.8.0)
+or a newer compatible release and supply an **explicit topology configuration**.
+The default configuration continues to use the schema-1 decoder.
 
 Home Assistant can continue to use per-BMS MQTT/ESPHome entities for every
 generated inventory. The default HA card uses entities; it is not a raw
@@ -169,11 +171,11 @@ and declared inventory before interpreting masks.
 ### Commission schema 2 on Cerbo
 
 Follow the bridge's
-[explicit-topology guide](https://github.com/victron-venus/dbus-mqtt-battery/blob/9ff889101350f8a148842dfc5091c096f993e95a/docs/flexible-topology.md)
-with a pinned 2.8.0 beta build containing the extension. Its examples include a
-[single 16-cell battery for offline observation](https://github.com/victron-venus/dbus-mqtt-battery/blob/9ff889101350f8a148842dfc5091c096f993e95a/examples/topology-16s-offline.json),
-a [mixed 4/8/4-cell inventory for offline observation](https://github.com/victron-venus/dbus-mqtt-battery/blob/9ff889101350f8a148842dfc5091c096f993e95a/examples/topology-mixed-offline.json),
-and a [managed 16-cell example](https://github.com/victron-venus/dbus-mqtt-battery/blob/9ff889101350f8a148842dfc5091c096f993e95a/examples/topology-16s-managed.example.json).
+[explicit-topology guide](https://github.com/victron-venus/dbus-mqtt-battery/blob/d9dfc35dc2b48215f925134cf67e9891b4e3093a/docs/flexible-topology.md)
+at the source revision for the v2.8.0 stable release. Its examples include a
+[single 16-cell battery for offline observation](https://github.com/victron-venus/dbus-mqtt-battery/blob/d9dfc35dc2b48215f925134cf67e9891b4e3093a/examples/topology-16s-offline.json),
+a [mixed 4/8/4-cell inventory for offline observation](https://github.com/victron-venus/dbus-mqtt-battery/blob/d9dfc35dc2b48215f925134cf67e9891b4e3093a/examples/topology-mixed-offline.json),
+and a [managed 16-cell example](https://github.com/victron-venus/dbus-mqtt-battery/blob/d9dfc35dc2b48215f925134cf67e9891b4e3093a/examples/topology-16s-managed.example.json).
 
 1. Keep the existing four-by-four collectors and Cerbo options unchanged when
    upgrading an established installation. The original configuration path keeps
@@ -199,7 +201,7 @@ New Cerbo topology mode explicitly uses the generated collector's voltage-weight
 current, minimum member SOC and minimum remaining-Ah policies. Existing Cerbo
 calculations remain unchanged in the original configuration path. Neither mode
 turns a nominal voltage label into a charging setpoint. Multi-collector strings
-and generic parallel-bank control are outside this beta extension.
+and generic parallel-bank control require a separate design.
 
 Rollback must restore a compatible driver, producer and configuration together:
 an older schema-1-only driver cannot consume a collector that still publishes
@@ -269,8 +271,8 @@ collector round. Consult the atomic telemetry for commissioning/freshness.
   summed Ah or rated capacity. Check BMS calibration and whether zero is real.
 - **Victron rejects telemetry:** verify the installed bridge build, selected
   configuration mode, MQTT prefix and exact member inventory. Schema 2 requires
-  the 2.8.0 beta extension and explicit topology mode; older/default schema-1
-  configurations remain incompatible. Check both `cell_count` and
+  the v2.8.0 stable bridge or a newer compatible release, with explicit topology
+  mode enabled. Check both `cell_count` and
   `reported_cell_count`. Do not change the schema number to 1 as a workaround.
 - **Entities duplicate or rename:** ensure unique ESPHome names, MQTT prefixes
   and MAC-based discovery for new collectors. Keep legacy Chain 1 identity intact.
