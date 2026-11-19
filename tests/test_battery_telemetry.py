@@ -233,6 +233,7 @@ class TelemetryTests(unittest.TestCase):
             estimated = [sensor for sensor in config["binary_sensor"] if sensor.get("name") == "Estimated"]
             self.assertEqual(len(estimated), 1)
             self.assertEqual(estimated[0]["platform"], "template")
+            self.assertIs(estimated[0]["trigger_on_initial_state"], True)
             prefix = config["mqtt"]["topic_prefix"]
             self.assertEqual(
                 config["esphome"]["name"],

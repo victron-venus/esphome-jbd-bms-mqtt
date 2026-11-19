@@ -620,6 +620,7 @@ binary_sensor:
     name: "Estimated"
     id: reporting_estimated
     entity_category: diagnostic
+    trigger_on_initial_state: true
 
   - platform: jbd_bms_ble
     jbd_bms_ble_id: bms1
