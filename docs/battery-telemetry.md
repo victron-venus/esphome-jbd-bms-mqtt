@@ -79,29 +79,33 @@ raw measurement, and `temperatures` contains the same single value (not an avera
 Unavailable required numeric fields are JSON null, never invented zeroes.
 Incomplete entries have age 60000, `online: false`, and make `ready: false`.
 The last samples are frozen at the end of each BMS request; a new round discards
-all previous evidence. Complete-series sensors publish NaN when the round is incomplete.
+all previous evidence. The original aggregate MQTT state topics continue to
+publish NaN when the round is incomplete.
 
 ## Reporting when Bluetooth drops out
 
-Use the `Reporting` sensors in the two four-BMS profiles for dashboards and
-graphs. At the end of each polling round, `Reporting BMS Count` gives the
-number of fresh, complete samples (0–4). For each missing member the report uses
-the mean of the responding members. `Reporting Pack Voltage` and `Reporting
-Pack Power` multiply the mean voltage and mean member power by four. The
-reported series current and pack SOC are means. For example, three members at
-13.2 V and 80% SOC give a pack estimate of 52.8 V and 80%.
+The four-BMS profiles keep the original Home Assistant entities `voltage_total`,
+`current_total`, `power_total` and `soc_total`. Existing dashboard references
+and entity history use the same IDs. ESPHome's MQTT discovery advertises
+`sensor/report_*/state` under the existing prefix and discovery identity.
+
+With all four readings, the existing calculation for each total applies. For
+each missing member, the dashboard uses the mean of fresh, complete samples.
+Voltage and power are the mean member value multiplied by four. Series current
+and SOC are means. For example, three members at 13.2 V and 80% SOC give a pack
+estimate of 52.8 V and 80%.
 
 The `Estimated` binary sensor is on whenever fewer than four members have
-complete samples. In Home Assistant, use it alongside the reporting entities
-to distinguish partial estimates. When zero members answer, the count is zero,
-the flag is on and all reporting measurements are unknown (NaN). Genuine
-0 A, 0 W and 0% SOC remain numeric. The first full round after a recovery turns
-the flag off.
+complete samples. When zero members answer, the flag is on and the four totals
+are unknown (NaN). Genuine 0 A, 0 W and 0% SOC remain numeric. The first full
+round after a recovery turns the flag off.
 
-Use real measurements for battery protection. Complete-series sensors and
-schema-1 readiness still require all four members. On a Cerbo with a dedicated
-SmartShunt, Venus OS can use its measured SOC as the system battery monitor
-while the BMS supplies DVCC limits separately.
+Subscribers to the original `sensor/*_total/state` routes and to the schema-1
+`telemetry` topic still receive physical measurements under the existing
+readiness rules. Use these routes for battery protection. `capacity_total`
+keeps its existing calculation and topic. On a Cerbo with a dedicated SmartShunt,
+Venus OS can use its measured SOC as the system battery monitor while the BMS
+supplies DVCC limits separately.
 
 Each entry also exposes field evidence for consumers that tolerate a short lost
 BLE reply after a complete snapshot. Bits 0–8 of `seen_mask` and `valid_mask`

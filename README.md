@@ -365,6 +365,7 @@ battery/binary_sensor/online_bms1/state      # BMS online status
 ### Aggregated Values
 ```
 battery/sensor/voltage_total/state    # Sum of all battery voltages
+battery/sensor/power_total/state      # Sum of member power
 battery/sensor/current_total/state    # Chain power divided by chain voltage
 battery/sensor/soc_total/state        # Average SoC
 battery/sensor/capacity_total/state   # Filtered minimum remaining capacity (Ah)
@@ -378,6 +379,12 @@ not a calibrated SOC or a substitute for individual battery/cell limits.
 the lowest value if it is less than 70% of the next. It is not the sum of
 series-connected batteries; if no capacity exceeds 5 Ah, the existing template
 skips that update. Use individual readings when assessing low-capacity batteries.
+
+The four-BMS profiles also use the same Home Assistant entities to display
+estimates during Bluetooth dropouts. MQTT discovery keeps their existing IDs,
+and the `Estimated` flag marks incomplete readings. See the
+[telemetry contract](docs/battery-telemetry.md#reporting-when-bluetooth-drops-out)
+for the display topics and the original measured topics above.
 
 ## Troubleshooting
 

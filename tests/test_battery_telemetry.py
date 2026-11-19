@@ -233,20 +233,45 @@ class TelemetryTests(unittest.TestCase):
             estimated = [sensor for sensor in config["binary_sensor"] if sensor.get("name") == "Estimated"]
             self.assertEqual(len(estimated), 1)
             self.assertEqual(estimated[0]["platform"], "template")
+            prefix = config["mqtt"]["topic_prefix"]
+            self.assertEqual(
+                config["esphome"]["name"],
+                "jbd-all-batteries" if chain == 1 else "jbd-all-batteries2",
+            )
+            self.assertEqual(
+                config["mqtt"]["discovery_unique_id_generator"],
+                "legacy" if chain == 1 else "mac",
+            )
             report_fields = (
-                ("reporting_bms_count", "members"),
-                ("reporting_pack_voltage", "pack_voltage"),
-                ("reporting_average_current", "average_current"),
-                ("reporting_pack_power", "pack_power"),
-                ("reporting_pack_soc", "pack_soc"),
-                (estimated[0]["id"], "estimated"),
+                ("voltage", "pack_voltage", f"chain{chain}_total_voltage_sensor"),
+                ("power", "pack_power", f"chain{chain}_total_power_sensor"),
+                ("current", "average_current", f"chain{chain}_total_current_sensor"),
+                ("soc", "pack_soc", f"chain{chain}_min_soc_sensor"),
             )
             reporting = next(
                 action["lambda"] for action in actions
                 if ".report(millis())" in action.get("lambda", "")
             )
-            for entity, field in report_fields:
-                self.assertIn(f"id({entity}).publish_state(report.{field});", reporting)
+            self.assertIn(f'id({estimated[0]["id"]}).publish_state(report.estimated);', reporting)
+            for metric, field, entity in report_fields:
+                original = f"{metric}_total"
+                display = next(sensor for sensor in config["sensor"] if sensor.get("name") == original)
+                measured = next(
+                    sensor for sensor in config["sensor"]
+                    if sensor.get("state_topic") == f"{prefix}/sensor/{original}/state"
+                )
+                self.assertEqual(display["id"], entity)
+                self.assertEqual(display["state_topic"], f"{prefix}/sensor/report_{metric}/state")
+                self.assertTrue(measured["internal"])
+                self.assertFalse(measured["discovery"])
+                self.assertEqual(display["accuracy_decimals"], measured["accuracy_decimals"])
+                self.assertNotIn("report", measured["lambda"])
+                self.assertIn(f'id({measured["id"]}).update();', reporting)
+                self.assertIn(
+                    f"id({entity}).publish_state( "
+                    f'report.estimated ? report.{field} : id({measured["id"]}).state);',
+                    " ".join(reporting.split()),
+                )
             publish = next(action["if"] for action in actions if "if" in action)
             self.assertEqual(publish["condition"], {"mqtt.connected": None})
             message = publish["then"][0]["mqtt.publish_json"]

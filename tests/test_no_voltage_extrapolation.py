@@ -1,4 +1,4 @@
-"""JBDESP-1/2: static guards on shipped ESPHome YAML (no firmware compile).
+"""Static guards for measured voltage on the original MQTT state topics.
 
 ESPHome template sensor lambdas: returning {} means "do not publish a new
 state" (prior state remains). NAN marks invalid/unknown so has_state/stale
@@ -34,8 +34,8 @@ def _mapping_values(node: yaml.Node) -> dict[str, yaml.Node]:
     return values
 
 
-def _voltage_total_lambdas(text: str) -> list[tuple[str, str]]:
-    """Read named sensor lambdas from the YAML tree, never across sensor blocks."""
+def measured_total_lambdas(text: str, metric: str) -> list[tuple[str, str]]:
+    """Read measured total lambdas from implicit or explicit state topics."""
     document = yaml.compose(text, Loader=yaml.SafeLoader)
     sensors = _mapping_values(document).get("sensor")
     if not isinstance(sensors, yaml.SequenceNode):
@@ -43,16 +43,26 @@ def _voltage_total_lambdas(text: str) -> list[tuple[str, str]]:
     out = []
     for sensor in sensors.value:
         fields = _mapping_values(sensor)
+        topic = fields.get("state_topic")
         name = fields.get("name")
-        if not isinstance(name, yaml.ScalarNode) or not name.value.startswith(
-            "voltage_total"
-        ):
+        if isinstance(topic, yaml.ScalarNode):
+            if not topic.value.endswith(f"/sensor/{metric}_total/state"):
+                continue
+            label = topic.value
+        elif isinstance(name, yaml.ScalarNode) and name.value.startswith(f"{metric}_total"):
+            label = name.value
+        else:
             continue
         body = fields.get("lambda")
         if not isinstance(body, yaml.ScalarNode) or body.tag != "tag:yaml.org,2002:str":
-            raise ValueError(f"missing literal lambda for {name.value}")
-        out.append((name.value, body.value))
+            raise ValueError(f"missing literal lambda for {label}")
+        out.append((label, body.value))
     return out
+
+
+def _voltage_total_lambdas(text: str) -> list[tuple[str, str]]:
+    """Read measured voltage lambdas without crossing sensor blocks."""
+    return measured_total_lambdas(text, "voltage")
 
 
 class LambdaExtractionTests(unittest.TestCase):

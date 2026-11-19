@@ -484,51 +484,45 @@ sensor:
     name: "uptime"
     update_interval: 60s
 
-  # Reporting only: estimate the whole pack from current-round observations.
-  - platform: template
-    name: "Reporting BMS Count"
-    id: reporting_bms_count
-    accuracy_decimals: 0
-    entity_category: diagnostic
-    update_interval: never
-
-  - platform: template
-    name: "Reporting Pack Voltage"
-    id: reporting_pack_voltage
-    unit_of_measurement: "V"
-    accuracy_decimals: 2
-    entity_category: diagnostic
-    update_interval: never
-
-  - platform: template
-    name: "Reporting Average Current"
-    id: reporting_average_current
-    unit_of_measurement: "A"
-    accuracy_decimals: 2
-    entity_category: diagnostic
-    update_interval: never
-
-  - platform: template
-    name: "Reporting Pack Power"
-    id: reporting_pack_power
-    unit_of_measurement: "W"
-    accuracy_decimals: 1
-    entity_category: diagnostic
-    update_interval: never
-
-  - platform: template
-    name: "Reporting Pack SOC"
-    id: reporting_pack_soc
-    unit_of_measurement: "%"
-    accuracy_decimals: 1
-    entity_category: diagnostic
-    update_interval: never
-
-  # Aggregated sensors (Chain Totals)
+  # Existing entities keep their names and discovery IDs.
   - platform: template
     name: "voltage_total"
     id: chain2_total_voltage_sensor
     unit_of_measurement: "V"
+    accuracy_decimals: 2
+    update_interval: never
+    state_topic: battery2/sensor/report_voltage/state
+
+  - platform: template
+    name: "power_total"
+    id: chain2_total_power_sensor
+    unit_of_measurement: "W"
+    accuracy_decimals: 1
+    update_interval: never
+    state_topic: battery2/sensor/report_power/state
+
+  - platform: template
+    name: "current_total"
+    id: chain2_total_current_sensor
+    unit_of_measurement: "A"
+    accuracy_decimals: 2
+    update_interval: never
+    state_topic: battery2/sensor/report_current/state
+
+  - platform: template
+    name: "soc_total"
+    id: chain2_min_soc_sensor
+    unit_of_measurement: "%"
+    accuracy_decimals: 0
+    update_interval: never
+    state_topic: battery2/sensor/report_soc/state
+
+  # Preserve measured totals for subscribers to the original MQTT topics.
+  - platform: template
+    id: measured_voltage_total
+    internal: true
+    discovery: false
+    state_topic: battery2/sensor/voltage_total/state
     accuracy_decimals: 2
     update_interval: never
     lambda: |-
@@ -544,9 +538,10 @@ sensor:
       return NAN;
 
   - platform: template
-    name: "power_total"
-    id: chain2_total_power_sensor
-    unit_of_measurement: "W"
+    id: measured_power_total
+    internal: true
+    discovery: false
+    state_topic: battery2/sensor/power_total/state
     accuracy_decimals: 1
     update_interval: never
     lambda: |-
@@ -559,21 +554,23 @@ sensor:
       return total;
 
   - platform: template
-    name: "current_total"
-    id: chain2_total_current_sensor
-    unit_of_measurement: "A"
+    id: measured_current_total
+    internal: true
+    discovery: false
+    state_topic: battery2/sensor/current_total/state
     accuracy_decimals: 2
     update_interval: never
     lambda: |-
-      float voltage = id(chain2_total_voltage_sensor).state;
-      float power = id(chain2_total_power_sensor).state;
+      float voltage = id(measured_voltage_total).state;
+      float power = id(measured_power_total).state;
       if (voltage > 10) return power / voltage;
       return NAN;
 
   - platform: template
-    name: "soc_total"
-    id: chain2_min_soc_sensor
-    unit_of_measurement: "%"
+    id: measured_soc_total
+    internal: true
+    discovery: false
+    state_topic: battery2/sensor/soc_total/state
     accuracy_decimals: 0
     update_interval: never
     lambda: |-
@@ -728,22 +725,22 @@ script:
       - lambda: 'if (!id(bms4_data_ready)) ESP_LOGW("poll", "B4: Timeout");'
       - lambda: battery_telemetry::snapshot().end_sample(3);
 
-      # Update aggregated sensors
+      # Publish measured MQTT totals and update the existing reporting entities.
       - lambda: |-
-          id(chain2_total_voltage_sensor).update();
-          id(chain2_total_power_sensor).update();
-          id(chain2_total_current_sensor).update();
-          id(chain2_min_soc_sensor).update();
+          id(measured_voltage_total).update();
+          id(measured_power_total).update();
+          id(measured_current_total).update();
+          id(measured_soc_total).update();
           id(chain2_capacity_remaining_sensor).update();
-
-      # Publish the pack report separately from complete-series totals.
-      - lambda: |-
           const auto report = battery_telemetry::snapshot().report(millis());
-          id(reporting_bms_count).publish_state(report.members);
-          id(reporting_pack_voltage).publish_state(report.pack_voltage);
-          id(reporting_average_current).publish_state(report.average_current);
-          id(reporting_pack_power).publish_state(report.pack_power);
-          id(reporting_pack_soc).publish_state(report.pack_soc);
+          id(chain2_total_voltage_sensor).publish_state(
+              report.estimated ? report.pack_voltage : id(measured_voltage_total).state);
+          id(chain2_total_power_sensor).publish_state(
+              report.estimated ? report.pack_power : id(measured_power_total).state);
+          id(chain2_total_current_sensor).publish_state(
+              report.estimated ? report.average_current : id(measured_current_total).state);
+          id(chain2_min_soc_sensor).publish_state(
+              report.estimated ? report.pack_soc : id(measured_soc_total).state);
           id(reporting_estimated).publish_state(report.estimated);
 
       # Atomic live-only contract consumed by dbus-mqtt-battery.
