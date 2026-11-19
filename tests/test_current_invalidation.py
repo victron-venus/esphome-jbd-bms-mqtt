@@ -13,6 +13,8 @@ import textwrap
 import unittest
 from pathlib import Path
 
+from test_no_voltage_extrapolation import measured_total_lambdas
+
 ROOT = Path(__file__).resolve().parents[1]
 
 
@@ -30,22 +32,16 @@ class CurrentInvalidationTests(unittest.TestCase):
             "jbd-all-batteries2.yaml",
         ):
             text = (ROOT / name).read_text()
-            blocks = re.finditer(
-                r'name:\s*"(current_total[^"]*)".*?lambda:\s*\|-\n'
-                r"((?:      [^\n]*\n)+)",
-                text,
-                re.DOTALL,
-            )
-            for block in blocks:
+            for label, lambda_body in measured_total_lambdas(text, "current"):
                 found += 1
-                body = textwrap.dedent(block.group(2))
+                body = textwrap.dedent(lambda_body)
                 ids = set(re.findall(r"id\((\w+)\)", body))
                 voltage = [sensor for sensor in ids if "voltage" in sensor]
                 power = [sensor for sensor in ids if "power" in sensor]
                 self.assertEqual(len(voltage), 1)
                 self.assertEqual(len(power), 1)
                 self.assertEqual(len(ids), 2)
-                with self.subTest(config=name, sensor=block.group(1)):
+                with self.subTest(config=name, sensor=label):
                     source = f"""
                     #include <cmath>
                     #include <iostream>
